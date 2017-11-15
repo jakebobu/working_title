@@ -22,6 +22,10 @@ Otherwise one collective bin of all articles given a timestamp
 
 ## Data Storage
 
+nyt wash post, bbc news, breitbart, CNN, MSNBC
+
+Look at WSJ
+
 I am temporarily storing it on a MongoDB locally
 Pete - move MongoDB credentials into environ
 
@@ -33,11 +37,13 @@ Pete - move MongoDB credentials into environ
 | 1 | tu8936nmvb09u8mtv4mu | Newsy News News...    | 0000-00-00 | Popular      | hhtps:  | 256        | story about | Wash Post   |
 | 2 | tvs3um89psv48um9pet3 | Breaking News Here... | 0000-00-00 | Sports       | hhtps:  | 123        | how my life | ESPN        |
 
+* id : unique identifier provided by source
+
 
 ## Data Manipulation
 
 Test different methods of time series analysis <readings>
-Try different methods of tokenizing/stemming/lemming
+Try different methods of tokenizing/stemming/lemming spacy
 
 Need to confirm consistency of column types across news sources (looking specifically at timestamps)
 
@@ -52,10 +58,13 @@ Autoregressive conditional heteroskedasticity
 
 Holt-Winter Model (seasonality) exponentially weighted average
 
+stats.models
 
 Financial models 	(Read into more)
     Black–Derman–Toy Black–Karasinski Black–Scholes Chen Constant elasticity of variance (CEV) Cox–Ingersoll–Ross (CIR) Garman–Kohlhagen Heath–Jarrow–Morton (HJM) Heston Ho–Lee Hull–White LIBOR market Rendleman–Bartter SABR volatility Vašíček Wilkie
 
+
+nmf
 
 ## Web App
 Ran from AWS
@@ -100,6 +109,7 @@ Given model, show probability of new trending topics
 
 ## Future Goals
 Everything I can't do in time
+Chronos Job as future
 
 To Read:
 https://en.wikipedia.org/wiki/Stochastic_simulation
