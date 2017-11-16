@@ -33,26 +33,36 @@ import numpy as np
 import pandas as pd
 import datetime as dt
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
 from sklearn.decomposition import NMF
-from sklearn.pipeline import Pipeline
 from string import punctuation
 import matplotlib.pyplot as plt
 
 
 class NMF_Time(object):
     """docstring for NMF_Time."""
-    def __init__(self):
+    def __init__(self, top_n_words=10):
+        """ Initialization of class
+
+        Parameters
+        ----------
+        top_n_words: the number of words you want to show per topic
+
+        """
+
         print('Intializing Class')
+        self.top_n_words = top_n_words
         self.t_vect = None
         self.nmf = None
         self.counts = None
         self.times = None
         self.topics = None
+        self.pos_accel = None
         self.nlp = spacy.load('en')
         self._c = 0
         self._train_length = 0
         self._punctuation = punctuation + '’' + '--' + '’s'
+        self._vel = None
+        self._accel = None
 
     def _tokenize(self, doc):
         '''
@@ -94,7 +104,6 @@ class NMF_Time(object):
         self._train_length = content.shape[0]
         t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = self._tokenize, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
         nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True)
-        # pipe = Pipeline([('tf',t_vect), ('nmf', nmf)])
         print('Starting Vectorizer')
         self._c = 0
         print('Tokenizing (1/{0})'.format(self._train_length), end="\r")
@@ -108,9 +117,9 @@ class NMF_Time(object):
         H = nmf.components_
         vocab = { v: k for k, v in t_vect.vocabulary_.items()}
         top_words = []
-        ordering = H.argsort(axis=1)[:,:-11:-1]
+        ordering = H.argsort(axis=1)[:,:-top_n_words-1:-1]
         for i in range(H.shape[0]):
-            tp = [vocab[ordering[i,j]] for j in range(10)]
+            tp = [vocab[ordering[i,j]] for j in range(top_n_words)]
             top_words.append(tp)
         self.topics = np.array(top_words)
 
@@ -128,10 +137,11 @@ class NMF_Time(object):
         topic_counts : counts of articles that are pertaining to a topic, across time
         time_periods : the periods of time relating to topic_counts
         """
+
         if 'content' not in df.columns or 'pub_date' not in df.columns:
             print('Provided dataframe of Invalid type')
             return
-        if self.t_vect == None or self.nmf == None:
+        elif self.t_vect == None or self.nmf == None:
             content = df['content'].values
             generate_topics(content)
         df['pub_date'] = pd.to_datetime(df['pub_date'])
@@ -141,6 +151,7 @@ class NMF_Time(object):
         topic_counts = []
         time_periods = []
         print("Starting time analysis")
+        # May instead utilize spacy similarity to determine similarity between article and topics
         while start_time <= ending_point:
             print('Time period left (days): {}'.format((ending_point-start_time).days))
             df_dt = df[(df['pub_date'] < end_time) & (df['pub_date'] >= start_time)]
@@ -157,11 +168,18 @@ class NMF_Time(object):
         self.times = time_periods
         print('Time Counts is Complete')
 
-    def calc_vel_acel ():
-        '''
-        Need to specify some min vel and min accel
-        '''
-        if self.counts == None or self.times == None:
+    def calc_accel(self):
+        """ Using the calculated counts of articles in the topics, finds the velocity and acceleration of those counts across all topics
+
+        Assigns the velocity to self._vel
+        Assigns the acceleration to self._accel
+
+        Returns
+        -------
+        None
+        """
+
+        if type(self.counts) != np.ndarray or type(self.times) != np.ndarray:
             print("Requires 'perform_time_counting' to be done first")
             return
         rolling_means = np.zeros_like(self.counts)
@@ -169,12 +187,35 @@ class NMF_Time(object):
         for i in range(self.counts.shape[1]):
             rolling_means[:,i] = np.convolve(self.counts[:,i], np.ones((N,))/N, mode='same')
 
+        # Look to see if you can utilize np.convolve instead of for loops
+        # thinking for vel [-1,0,1]
+        # thinking for accel [1,-2,1]
+        # Compare results
+        vel = np.zeros_like(rolling_means)
+        accel = np.zeros_like(rolling_means)
+        for i in range(1, vel.shape[0]-1):
+            vel[i,:]=rolling_means[i+1,:] - rolling_means[i-1,:]
+            accel[i,:] = rolling_means[i + 1,:] + rolling_means[i-1,:] - 2*rolling_means[i,:] # / dt^2
+        vel[0,:] = rolling_means[1,:] - rolling_means[i,:]
+        vel[-1,:] = rolling_means[-1,:] - rolling_means[-2,:]
+        accel[0,:] = rolling_means[1,:] - rolling_means[i,:]
+        accel[-1,:] = rolling_means[-2,:] - rolling_means[-1,:]
+        self._vel = vel
+        self._accel = accel
+        self.pos_accel = accel*(vel > 0)*(accel > 0)
 
     def do_some_plotting(self):
         ''' Currently doing flat counts '''
         plt.close('all')
         for i in range(self.counts.shape[1]):
             plt.plot(self.times, self.counts[:,i], label=i)
+        plt.legend()
+        plt.show()
+
+    def plot_count_accel(self, topic_index=5):
+        plt.close('all')
+        plt.plot(self.times,self.counts[:,topic_index], label = 'Counts')
+        plt.plot(self.times,self.pos_accel[:,topic_index], label = 'Acceleration')
         plt.legend()
         plt.show()
 
@@ -189,7 +230,9 @@ if __name__ == '__main__':
     testy = NMF_Time()
     testy.generate_topics(df['content'].values)
     testy.perform_time_counting(df)
-    testy.do_some_plotting()
+    testy.calc_accel()
+    testy.to_pkl()
+    # testy.do_some_plotting()
     # W, H = do_local()
 
 

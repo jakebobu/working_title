@@ -17,7 +17,7 @@ def single_query(link, payload):
 
 # Scrape the meta data (link to article and put it into Mongo)
 def nyt_scrape_meta(scrape_date = dt.date.today()):
-    """ Returns a query containing NYT articles from that date
+    """ Grabs a query containing NYT articles from that date and stores those in the specified location
 
     Parameters
     ----------
@@ -37,7 +37,19 @@ def nyt_scrape_meta(scrape_date = dt.date.today()):
     yesterday = today - dt.timedelta(days=1)
     payload['begin_date'] = str(yesterday).replace('-','')
     print ('Scraping period: %s - %s ' % (str(yesterday), str(today)))
-    return single_query(link, payload)
+    content = single_query(link, payload)
+    df = nyt_table_setup(content)
+    df_tot = pd.read_csv('temp_data1.csv',index_col=0)
+    temp_cols = ['_id', 'content', 'headline', 'news_source', 'pub_date', 'section_name', 'web_url', 'word_count']
+    df_tot = df_tot[temp_cols]
+    df_tot = df_tot.append(df[temp_cols])
+    for col in df_tot.columns:
+        if col not in temp_cols:
+            print('dropping', col)
+            df_tot.drop(col, inplace=True,axis=1)
+    df_tot.dropna(subset=['content'],axis=0, inplace=True)
+    # df_tot.drop_duplicates(subset=['headline'], inplace=True) WTF???????
+    df_tot.to_csv('temp_data1.csv')
 
 
 def nyt_scrape_meta_continuous(days=1, end_date = dt.date.today()):
@@ -303,10 +315,11 @@ def tot_newsy (sources):
 
 if __name__ == '__main__':
     sources = ['the-washington-post','bbc-news','cnn','breitbart-news']
-    nyt_scrape_meta_continuous(days=16, end_date=dt.datetime(2017, 7, 25))
+
+    # The three general things you can run (Pick 1)
+    # nyt_scrape_meta_continuous(days=16, end_date=dt.datetime(2017, 7, 25))
     # tot_newsy(sources)
-
-
+    # nyt_scrape_meta() # Good for getting today's nyt news
 
 
 

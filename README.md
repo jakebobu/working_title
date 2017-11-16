@@ -115,3 +115,17 @@ To Read:
 https://en.wikipedia.org/wiki/Stochastic_simulation
 https://en.wikipedia.org/wiki/Time_series
 https://en.wikipedia.org/wiki/Autoregressive%E2%80%93moving-average_model
+
+
+Things I did today (11/15)
+Converted mvp pipeline into a class object
+Add verbosity into class object
+Did some modifications on spacy toky/lemy
+Generate counts of each article in terms of topics by specified dt
+Did rough calc to get vel and accel, shows times where v > 0 and a > 0
+
+TODO tomorrow (11/16)
+Look at what I got, see if it makes sense
+Improve accel algorithm
+Consolidate all variables I can test on in one location (make easier for myself later)
+Look to set an initial threshold or comparison metric for acceleration. See what I am seeing rising and when
