@@ -86,6 +86,7 @@ def nyt_scrape_meta_continuous(days=1, end_date = dt.date.today()):
         df = nyt_table_setup(content)
         '''Have issue with appending where it creates an extra column. This removes that column '''
         df_tot = df_tot.append(df[temp_cols])
+        # May not need
         for col in df_tot.columns:
             if col not in temp_cols:
                 print('dropping', col)
@@ -303,6 +304,7 @@ def tot_newsy (sources):
             else:
                 df = news_thingy_table_setup(content, s)
                 df_tot = df_tot.append(df)
+                # May not need
                 for col in df_tot.columns:
                     if col not in temp_cols:
                         print('dropping', col)
@@ -318,7 +320,7 @@ if __name__ == '__main__':
 
     # The three general things you can run (Pick 1)
     # nyt_scrape_meta_continuous(days=16, end_date=dt.datetime(2017, 7, 25))
-    # tot_newsy(sources)
+    tot_newsy(sources)
     # nyt_scrape_meta() # Good for getting today's nyt news
 
 

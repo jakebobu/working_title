@@ -87,18 +87,22 @@ Given model, show probability of new trending topics
 
 
 ## Schedy
+
 11/14-11/17
 * convert from json dump into an organized fashion containing only important features
 * create a pipeline for natural language processing where I can test various methods
 * create a pipeline for time series analysis where "                  "
+
 11/18-11/19
 * Get an MVP model ready to go
 * Test various methodologies and rate their general performance
+
 11/20-11/24
 * Make final selection on model and look to optimize parameters
 * Quantify time series analysis (what growth rates are we looking for?)
 * Setup MVP Web App that just gets it done
 * Look into public/private access rights on AWS EC2 and S3 to makes sure another can use it (but wait till ready)
+
 11/25-end
 * Make web app user friendly and easy on the eyes
 * Let it run for test periods of times by itself (I'm not logged in)
@@ -125,7 +129,8 @@ Generate counts of each article in terms of topics by specified dt
 Did rough calc to get vel and accel, shows times where v > 0 and a > 0
 
 TODO tomorrow (11/16)
-Look at what I got, see if it makes sense
-Improve accel algorithm
-Consolidate all variables I can test on in one location (make easier for myself later)
-Look to set an initial threshold or comparison metric for acceleration. See what I am seeing rising and when
+Look at what I got, see if it makes sense (tokenizer needs more work. 1 topic is phone numbers, emails contact us at) taxes -> taxis
+Improve accel algorithm, look for algorithms that utilize acceleration and are powerful in prediction
+Have a feeling that some news sources articles are too sparse (across time creating) creating topics by source itself
+Consolidate all variables I can test on in one location (make easier for myself later when playing with them)
+Look to set an initial threshold or comparison metric for acceleration. See what I am seeing rising and when, again based on accel alogithm

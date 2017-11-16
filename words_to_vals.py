@@ -23,6 +23,12 @@ What I can customize:
     - solver 'cd' or 'mu'
     - alpha (regularization)
     - l1_ratio
+
+
+In Counting:
+    dt: time interval for grouping counts of articles by topic
+    threshold: minimum similarity between an article and a topic to count as being about that topic
+
 '''
 
 import pickle
@@ -64,6 +70,8 @@ class NMF_Time(object):
         self._vel = None
         self._accel = None
 
+
+    # TODO: remove just numbers and email addresses and
     def _tokenize(self, doc):
         '''
             tokenizer function to use for the TfidfVectorizer class
@@ -117,9 +125,9 @@ class NMF_Time(object):
         H = nmf.components_
         vocab = { v: k for k, v in t_vect.vocabulary_.items()}
         top_words = []
-        ordering = H.argsort(axis=1)[:,:-top_n_words-1:-1]
+        ordering = H.argsort(axis=1)[:,:-self.top_n_words-1:-1]
         for i in range(H.shape[0]):
-            tp = [vocab[ordering[i,j]] for j in range(top_n_words)]
+            tp = [vocab[ordering[i,j]] for j in range(self.top_n_words)]
             top_words.append(tp)
         self.topics = np.array(top_words)
 
@@ -165,7 +173,7 @@ class NMF_Time(object):
             start_time = end_time
             end_time = start_time + delta
         self.counts = np.array(topic_counts)
-        self.times = time_periods
+        self.times = np.array(time_periods)
         print('Time Counts is Complete')
 
     def calc_accel(self):
@@ -187,51 +195,77 @@ class NMF_Time(object):
         for i in range(self.counts.shape[1]):
             rolling_means[:,i] = np.convolve(self.counts[:,i], np.ones((N,))/N, mode='same')
 
+        vel = np.zeros_like(rolling_means)
+        accel = np.zeros_like(rolling_means)
+
+        for i in range(self.counts.shape[1]):
+            vel[:,i] = np.convolve(rolling_means[:,i], np.array([1,0,-1]),mode='same')
+            accel[:,i]=np.convolve(rolling_means[:,i], np.array([1,-2,1]),mode='same')
+
         # Look to see if you can utilize np.convolve instead of for loops
         # thinking for vel [-1,0,1]
         # thinking for accel [1,-2,1]
         # Compare results
-        vel = np.zeros_like(rolling_means)
-        accel = np.zeros_like(rolling_means)
-        for i in range(1, vel.shape[0]-1):
-            vel[i,:]=rolling_means[i+1,:] - rolling_means[i-1,:]
-            accel[i,:] = rolling_means[i + 1,:] + rolling_means[i-1,:] - 2*rolling_means[i,:] # / dt^2
-        vel[0,:] = rolling_means[1,:] - rolling_means[i,:]
-        vel[-1,:] = rolling_means[-1,:] - rolling_means[-2,:]
-        accel[0,:] = rolling_means[1,:] - rolling_means[i,:]
-        accel[-1,:] = rolling_means[-2,:] - rolling_means[-1,:]
+
+        # for i in range(1, vel.shape[0]-1):
+        #     vel[i,:]=rolling_means[i+1,:] - rolling_means[i-1,:]
+        #     accel[i,:] = rolling_means[i + 1,:] + rolling_means[i-1,:] - 2*rolling_means[i,:] # / dt^2
+        # vel[0,:] = rolling_means[1,:] - rolling_means[i,:]
+        # vel[-1,:] = rolling_means[-1,:] - rolling_means[-2,:]
+        # accel[0,:] = rolling_means[1,:] - rolling_means[i,:]
+        # accel[-1,:] = rolling_means[-2,:] - rolling_means[-1,:]
         self._vel = vel
         self._accel = accel
         self.pos_accel = accel*(vel > 0)*(accel > 0)
 
-    def do_some_plotting(self):
-        ''' Currently doing flat counts '''
+    def plot_topics_across_time(self, top_n_topics=None):
+        ''' Currently doing flat counts
+
+        top_n_topics: None shows all topics, type(int) returns the top topics of that number, type(list/numpy.array) returns those topics if they exist
+        '''
+        if type(self.counts) != np.array or type(self.times) != np.array:
+            print("Requires 'perform_time_counting' to be done first")
+            return
         plt.close('all')
-        for i in range(self.counts.shape[1]):
-            plt.plot(self.times, self.counts[:,i], label=i)
+        if type(top_n_topics) == int:
+            if top_n_topics > self.counts.shape[1]:
+                top_n_topics = self.counts.shape[1]
+            for i in range(top_n_topics):
+                plt.plot(self.times, self.counts[:,i], label=i)
+        elif type(top_n_topics) == np.array or type(top_n_topics) == list:
+            for t in top_n_topics:
+                if t in range(self.counts.shape[1]):
+                    plt.plot(self.times, self.counts[:,t], label=t)
+        else:
+            for i in range(self.counts.shape[1]):
+                plt.plot(self.times, self.counts[:,i], label=i)
         plt.legend()
         plt.show()
 
     def plot_count_accel(self, topic_index=5):
+        N = 3
+        rolling_means = np.convolve(self.counts[:,topic_index], np.ones((N,))/N, mode='same')
         plt.close('all')
         plt.plot(self.times,self.counts[:,topic_index], label = 'Counts')
+        plt.plot(self.times,rolling_means, '--', label = 'Counts Smoothed')
         plt.plot(self.times,self.pos_accel[:,topic_index], label = 'Acceleration')
         plt.legend()
         plt.show()
 
+    # Doesn't like pickling something about this class
     def to_pkl(filename='model.pkl'):
         with open (filename, 'wb') as f:
             pickle.dumb(self, f)
 
 if __name__ == '__main__':
     # nlp = spacy.load('en')
-    df = pd.read_csv('temp_data1.csv')
+    df = pd.read_csv('temp_data1.csv',index_col=0)
     df = df[df['news_source'] == 'NYT']
     testy = NMF_Time()
     testy.generate_topics(df['content'].values)
     testy.perform_time_counting(df)
     testy.calc_accel()
-    testy.to_pkl()
+    # testy.to_pkl()
     # testy.do_some_plotting()
     # W, H = do_local()
 
