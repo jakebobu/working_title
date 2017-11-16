@@ -134,3 +134,16 @@ Improve accel algorithm, look for algorithms that utilize acceleration and are p
 Have a feeling that some news sources articles are too sparse (across time creating) creating topics by source itself
 Consolidate all variables I can test on in one location (make easier for myself later when playing with them)
 Look to set an initial threshold or comparison metric for acceleration. See what I am seeing rising and when, again based on accel alogithm
+Pickle problem, why can't I pickle my model
+
+
+
+
+
+
+
+
+
+
+
+*** END  ***
