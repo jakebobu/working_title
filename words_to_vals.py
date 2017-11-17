@@ -33,6 +33,8 @@ In Counting:
 
 import pickle
 import spacy
+from spacy.tokenizer import Tokenizer
+from spacy.lang.en import English
 import boto3
 from post_to_s3 import get_client_bucket
 import numpy as np
@@ -64,6 +66,7 @@ class NMF_Time(object):
         self.topics = None
         self.pos_accel = None
         self.nlp = spacy.load('en')
+        self._spacy_tokenizer = English().Defaults.create_tokenizer(self.nlp)
         self._c = 0
         self._train_length = 0
         self._punctuation = punctuation + '’' + '--' + '’s'
@@ -79,8 +82,8 @@ class NMF_Time(object):
         '''
         self._c += 1
         print('Tokenizing ({0}/{1})'.format(self._c,self._train_length), end="\r")
-        wList = [token.text if token.lemma_ == '-PRON-' else token.lemma_ for token in self.nlp(doc)]
-        return [token for token in wList if token not in self._punctuation]
+        wList = [t.text if t.lemma_ == '-PRON-' else t.lemma_ for t in [token for token in self._spacy_tokenizer(doc) if token.is_alpha]]
+        return [token for token in wList if token not in self._punctuation and '@' not in token]
 
     def generate_topics (self, content, **kwargs):
         """ Converts a list of str containing the article text into a feature matrix
@@ -202,28 +205,23 @@ class NMF_Time(object):
             vel[:,i] = np.convolve(rolling_means[:,i], np.array([1,0,-1]),mode='same')
             accel[:,i]=np.convolve(rolling_means[:,i], np.array([1,-2,1]),mode='same')
 
-        # Look to see if you can utilize np.convolve instead of for loops
-        # thinking for vel [-1,0,1]
-        # thinking for accel [1,-2,1]
-        # Compare results
-
-        # for i in range(1, vel.shape[0]-1):
-        #     vel[i,:]=rolling_means[i+1,:] - rolling_means[i-1,:]
-        #     accel[i,:] = rolling_means[i + 1,:] + rolling_means[i-1,:] - 2*rolling_means[i,:] # / dt^2
-        # vel[0,:] = rolling_means[1,:] - rolling_means[i,:]
-        # vel[-1,:] = rolling_means[-1,:] - rolling_means[-2,:]
-        # accel[0,:] = rolling_means[1,:] - rolling_means[i,:]
-        # accel[-1,:] = rolling_means[-2,:] - rolling_means[-1,:]
         self._vel = vel
         self._accel = accel
         self.pos_accel = accel*(vel > 0)*(accel > 0)
 
     def plot_topics_across_time(self, top_n_topics=None):
-        ''' Currently doing flat counts
+        """ Plots the counts of the desired topics across time
 
+        Parameters
+        ----------
         top_n_topics: None shows all topics, type(int) returns the top topics of that number, type(list/numpy.array) returns those topics if they exist
-        '''
-        if type(self.counts) != np.array or type(self.times) != np.array:
+
+        Returns
+        -------
+        A plot of those topics in top_n_topics
+        """
+
+        if type(self.counts) != np.ndarray or type(self.times) != np.ndarray:
             print("Requires 'perform_time_counting' to be done first")
             return
         plt.close('all')
@@ -243,6 +241,17 @@ class NMF_Time(object):
         plt.show()
 
     def plot_count_accel(self, topic_index=5):
+        """ Given a selected topic, plots the counts, averaged counts, and acceleration of that topic
+
+        Parameters
+        ----------
+        topic_index: The index of the desired topic to see its counts and acceleration
+
+        Returns
+        -------
+        A plot of the topic at topic_index containing acceleration and counts
+        """
+
         N = 3
         rolling_means = np.convolve(self.counts[:,topic_index], np.ones((N,))/N, mode='same')
         plt.close('all')
@@ -252,38 +261,64 @@ class NMF_Time(object):
         plt.legend()
         plt.show()
 
-    # Doesn't like pickling something about this class
-    def to_pkl(filename='model.pkl'):
-        with open (filename, 'wb') as f:
-            pickle.dumb(self, f)
+    # TODO: look at statsmodels to see what they can offer http://www.statsmodels.org/stable/vector_ar.html#module-statsmodels.tsa.vector_ar
+    # http://www.statsmodels.org/stable/vector_ar.html#module-statsmodels.tsa.vector_ar.var_model
+
+    # TODO: look at the capabilities of http://www.pyflux.com/
+
+    #TODO: cut counts data off early a couple time periods and use this to go back in and predict those values
+    # Vary alpha and beta to see if there are optimal values for predictions
+    def double_exp_smoothing(self):
+        """ Applies double exponential smoothing to the counts of articles for topics
+
+        Parameters
+        ----------
+        None, requires counts to be created before this step
+
+        Returns
+        -------
+        None, assigns self._s and self._b which can be used for predictions
+        """
+
+        s = self.counts.copy()
+        b = s.copy()
+        alpha = 0.62
+        beta = 0.5
+        b[0,:] = (s[5,:]-s[0,:])/5
+        b[1,:] -= s[0,:]
+        for i in range(2, s.shape[0]):
+            s[i,:] = alpha * s[i,:] + (1 - alpha) * (s[i-1,:] + b[i-1,:])
+            b[i,:] = beta * (s[i,:] - s[i-1,:]) + (1 - beta) * b[i-1,:]
+        self._s = s
+        self._b = b
+
+    def predict_ahead(self, topic_index=0, periods_ahead=1):
+        """ Predicts topic counts a desired periods ahead
+
+        Parameters
+        ----------
+        topic_index: The index of the desired topic to see its counts and acceleration
+        periods_ahead: how many periods ahead to predict
+
+        Returns
+        -------
+        A predicted count of articles for that topic
+        """
+
+        return self._s[topic_index,-1] + periods_ahead * self._b[topic_index,-1]
+
+    # # Doesn't like pickling something about this class
+    # def to_pkl(filename='model.pkl'):
+    #     with open (filename, 'wb') as f:
+    #         pickle.dumb(self, f)
 
 if __name__ == '__main__':
-    # nlp = spacy.load('en')
+    from words_to_vals import NMF_Time
     df = pd.read_csv('temp_data1.csv',index_col=0)
     df = df[df['news_source'] == 'NYT']
     testy = NMF_Time()
     testy.generate_topics(df['content'].values)
     testy.perform_time_counting(df)
     testy.calc_accel()
-    # testy.to_pkl()
-    # testy.do_some_plotting()
-    # W, H = do_local()
-
-
-    # nlp = spacy.load('en')
-    # corpus_vocab = []
-    # vocab = []
-    # for i, c in enumerate(content):
-    #     print('Working on', i)
-    #     vocab_set = {}
-    #     doc = nlp(c)
-    #     for token in doc:
-    #         vocab_set[token.lemma_] = 1 + vocab_set.get(token.lemma_, 0)
-    #         vocab.append(token.lemma_)
-    #     corpus_vocab.append(vocab_set)
-    # vocab = list(set(vocab))
-    # mat = np.zeros((len(content), len(vocab)))
-    # for i in range(mat.shape[0]):
-    #     for j in range(mat.shape[1]):
-    #         mat[i,j] = corpus_vocab[i].get(vocab[j],0.0)
-    # return mat
+    with open ('model.pkl', 'wb') as f:
+        pickle.dumb(testy, f)

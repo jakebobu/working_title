@@ -59,6 +59,7 @@ Autoregressive conditional heteroskedasticity
 Holt-Winter Model (seasonality) exponentially weighted average
 
 stats.models
+pyflux.models
 
 Financial models 	(Read into more)
     Black–Derman–Toy Black–Karasinski Black–Scholes Chen Constant elasticity of variance (CEV) Cox–Ingersoll–Ross (CIR) Garman–Kohlhagen Heath–Jarrow–Morton (HJM) Heston Ho–Lee Hull–White LIBOR market Rendleman–Bartter SABR volatility Vašíček Wilkie
@@ -131,7 +132,7 @@ Did rough calc to get vel and accel, shows times where v > 0 and a > 0
 TODO tomorrow (11/16)
 Look at what I got, see if it makes sense (tokenizer needs more work. 1 topic is phone numbers, emails contact us at) taxes -> taxis
 Improve accel algorithm, look for algorithms that utilize acceleration and are powerful in prediction
-Have a feeling that some news sources articles are too sparse (across time creating) creating topics by source itself
+Have a feeling that some newfs sources articles are too sparse (across time creating) creating topics by source itself
 Consolidate all variables I can test on in one location (make easier for myself later when playing with them)
 Look to set an initial threshold or comparison metric for acceleration. See what I am seeing rising and when, again based on accel alogithm
 Pickle problem, why can't I pickle my model
