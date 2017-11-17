@@ -59,7 +59,7 @@ Autoregressive conditional heteroskedasticity
 Holt-Winter Model (seasonality) exponentially weighted average
 
 stats.models
-pyflux.models
+pyflux.models -> ARIMA(X), GARCH, EGARCH, beta-t-EGARCH, GAS
 
 Financial models 	(Read into more)
     Black–Derman–Toy Black–Karasinski Black–Scholes Chen Constant elasticity of variance (CEV) Cox–Ingersoll–Ross (CIR) Garman–Kohlhagen Heath–Jarrow–Morton (HJM) Heston Ho–Lee Hull–White LIBOR market Rendleman–Bartter SABR volatility Vašíček Wilkie

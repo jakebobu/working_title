@@ -44,9 +44,31 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 from string import punctuation
 import matplotlib.pyplot as plt
+import pyflux as pf
+from work_with_counts import Count_Worker
+# class NMF_Time_Save ():
+#     def __init__(self, obj):
+#         self.top_n_words = obj.top_n_words
+#         # self.t_vect = obj.t_vect
+#         self.nmf = obj.nmf
+#         self.counts = obj.counts
+#         self.total_counts = obj.total_counts
+#         self.times = obj.times
+#         self.topics = obj.topics
+
+    # def load_save(self, file_location):
+    #     with open (file_location, 'rb') as f:
+    #         save_obj = pickle.load(f)
+    #     # self.t_vect = save_obj.t_vect
+    #     self.nmf = save_obj.nmf
+    #     self.top_n_words = save_obj.top_n_words
+    #     self.topics = save_obj.topics
+    #     self.counts = save_obj.counts
+    #     self.total_counts = save_obj.total_counts
+    #     self.times = save_obj.times
 
 
-class NMF_Time(object):
+class NMF_Time():
     """docstring for NMF_Time."""
     def __init__(self, top_n_words=10):
         """ Initialization of class
@@ -62,29 +84,27 @@ class NMF_Time(object):
         self.t_vect = None
         self.nmf = None
         self.counts = None
+        self.total_counts = None
         self.times = None
         self.topics = None
-        self.pos_accel = None
         self.nlp = spacy.load('en')
         self._spacy_tokenizer = English().Defaults.create_tokenizer(self.nlp)
         self._c = 0
         self._train_length = 0
         self._punctuation = punctuation + '’' + '--' + '’s'
-        self._vel = None
-        self._accel = None
 
-
-    # TODO: remove just numbers and email addresses and
     def _tokenize(self, doc):
         '''
             tokenizer function to use for the TfidfVectorizer class
             Currently using spacy, can replace with nltk stuff as well for comparison
         '''
         self._c += 1
-        print('Tokenizing ({0}/{1})'.format(self._c,self._train_length), end="\r")
+        print('Tokenizing ({0}/{1})'.format(self._c, self._train_length), end="\r")
         wList = [t.text if t.lemma_ == '-PRON-' else t.lemma_ for t in [token for token in self._spacy_tokenizer(doc) if token.is_alpha]]
         return [token for token in wList if token not in self._punctuation and '@' not in token]
 
+
+    # Need to cap my dictionary or modify min_df
     def generate_topics (self, content, **kwargs):
         """ Converts a list of str containing the article text into a feature matrix
         Allows for ability to permutate the functional components to form comparisons
@@ -121,7 +141,7 @@ class NMF_Time(object):
         t_mat = t_vect.fit_transform(content)
         print('Tokenizing completed ({0}/{0})'.format(self._train_length))
         print('Starting NMF')
-        nmf.fit(t_mat)
+        self.W = nmf.fit_transform(t_mat)
         print('Topics Generated')
         self.t_vect = t_vect
         self.nmf = nmf
@@ -134,7 +154,47 @@ class NMF_Time(object):
             top_words.append(tp)
         self.topics = np.array(top_words)
 
-    def perform_time_counting (self, df, delta=dt.timedelta(days=3), threshold=0.1):
+
+    def perform_time_counting_self (self, df, delta=dt.timedelta(days=1), threshold=0.1):
+        """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
+        This assumes that df content is that the model was fitted on
+
+        Parameters
+        ----------
+        df (pandas.dataframe) : DataFrame of articles containing article content and article publication date. Can be completely new data
+        dt (datetime.timedelta) : timespan for which to bin articles into (default = 3 days)
+        threshold : the value at which equal to or above an article is considered counted as of that topic (default = 0.1)
+
+        Returns
+        -------
+        topic_counts : counts of articles that are pertaining to a topic, across time
+        total_counts : total number of articles in that time period
+        time_periods : the periods of time relating to topic_counts
+        """
+
+        df['pub_date'] = pd.to_datetime(df['pub_date'])
+        start_time = df['pub_date'].min()
+        end_time = start_time + delta
+        ending_point = df['pub_date'].max()
+        topic_counts = []
+        period_counts = []
+        time_periods = []
+        print("Starting time analysis")
+        while start_time <= ending_point:
+            sub_W = self.W[(df['pub_date'] < end_time) & (df['pub_date'] >= start_time),:]
+            topic_pick = np.sum(1*(sub_W >= threshold),axis=0)
+            topic_counts.append(topic_pick)
+            period_counts.append(sub_W.shape[0])
+            time_periods.append(start_time)
+            start_time = end_time
+            end_time = start_time + delta
+        self.counts = np.array(topic_counts)
+        self.total_counts = np.array(period_counts)
+        self.times = np.array(time_periods)
+        print('Time Counts is Complete')
+
+
+    def perform_time_counting_new (self, df, delta=dt.timedelta(days=1), threshold=0.1):
         """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
 
         Parameters
@@ -146,6 +206,7 @@ class NMF_Time(object):
         Returns
         -------
         topic_counts : counts of articles that are pertaining to a topic, across time
+        total_counts : total number of articles in that time period
         time_periods : the periods of time relating to topic_counts
         """
 
@@ -160,6 +221,7 @@ class NMF_Time(object):
         end_time = start_time + delta
         ending_point = df['pub_date'].max()
         topic_counts = []
+        period_counts = []
         time_periods = []
         print("Starting time analysis")
         # May instead utilize spacy similarity to determine similarity between article and topics
@@ -170,155 +232,25 @@ class NMF_Time(object):
             self._c = 0
             self._train_length = dt_content.shape[0]
             topic_vals = self.nmf.transform(self.t_vect.transform(dt_content))
-            topic_pick = np.sum(1*(topic_vals >= threshold),axis=0)/dt_content.shape[0]
+            topic_pick = np.sum(1*(topic_vals >= threshold),axis=0)
             topic_counts.append(topic_pick)
+            period_counts.append(dt_content.shape[0])
             time_periods.append(start_time)
             start_time = end_time
             end_time = start_time + delta
         self.counts = np.array(topic_counts)
+        self.total_counts = period_counts
         self.times = np.array(time_periods)
         print('Time Counts is Complete')
 
-    def calc_accel(self):
-        """ Using the calculated counts of articles in the topics, finds the velocity and acceleration of those counts across all topics
-
-        Assigns the velocity to self._vel
-        Assigns the acceleration to self._accel
-
-        Returns
-        -------
-        None
-        """
-
-        if type(self.counts) != np.ndarray or type(self.times) != np.ndarray:
-            print("Requires 'perform_time_counting' to be done first")
-            return
-        rolling_means = np.zeros_like(self.counts)
-        N = 3
-        for i in range(self.counts.shape[1]):
-            rolling_means[:,i] = np.convolve(self.counts[:,i], np.ones((N,))/N, mode='same')
-
-        vel = np.zeros_like(rolling_means)
-        accel = np.zeros_like(rolling_means)
-
-        for i in range(self.counts.shape[1]):
-            vel[:,i] = np.convolve(rolling_means[:,i], np.array([1,0,-1]),mode='same')
-            accel[:,i]=np.convolve(rolling_means[:,i], np.array([1,-2,1]),mode='same')
-
-        self._vel = vel
-        self._accel = accel
-        self.pos_accel = accel*(vel > 0)*(accel > 0)
-
-    def plot_topics_across_time(self, top_n_topics=None):
-        """ Plots the counts of the desired topics across time
-
-        Parameters
-        ----------
-        top_n_topics: None shows all topics, type(int) returns the top topics of that number, type(list/numpy.array) returns those topics if they exist
-
-        Returns
-        -------
-        A plot of those topics in top_n_topics
-        """
-
-        if type(self.counts) != np.ndarray or type(self.times) != np.ndarray:
-            print("Requires 'perform_time_counting' to be done first")
-            return
-        plt.close('all')
-        if type(top_n_topics) == int:
-            if top_n_topics > self.counts.shape[1]:
-                top_n_topics = self.counts.shape[1]
-            for i in range(top_n_topics):
-                plt.plot(self.times, self.counts[:,i], label=i)
-        elif type(top_n_topics) == np.array or type(top_n_topics) == list:
-            for t in top_n_topics:
-                if t in range(self.counts.shape[1]):
-                    plt.plot(self.times, self.counts[:,t], label=t)
-        else:
-            for i in range(self.counts.shape[1]):
-                plt.plot(self.times, self.counts[:,i], label=i)
-        plt.legend()
-        plt.show()
-
-    def plot_count_accel(self, topic_index=5):
-        """ Given a selected topic, plots the counts, averaged counts, and acceleration of that topic
-
-        Parameters
-        ----------
-        topic_index: The index of the desired topic to see its counts and acceleration
-
-        Returns
-        -------
-        A plot of the topic at topic_index containing acceleration and counts
-        """
-
-        N = 3
-        rolling_means = np.convolve(self.counts[:,topic_index], np.ones((N,))/N, mode='same')
-        plt.close('all')
-        plt.plot(self.times,self.counts[:,topic_index], label = 'Counts')
-        plt.plot(self.times,rolling_means, '--', label = 'Counts Smoothed')
-        plt.plot(self.times,self.pos_accel[:,topic_index], label = 'Acceleration')
-        plt.legend()
-        plt.show()
-
-    # TODO: look at statsmodels to see what they can offer http://www.statsmodels.org/stable/vector_ar.html#module-statsmodels.tsa.vector_ar
-    # http://www.statsmodels.org/stable/vector_ar.html#module-statsmodels.tsa.vector_ar.var_model
-
-    # TODO: look at the capabilities of http://www.pyflux.com/
-
-    #TODO: cut counts data off early a couple time periods and use this to go back in and predict those values
-    # Vary alpha and beta to see if there are optimal values for predictions
-    def double_exp_smoothing(self):
-        """ Applies double exponential smoothing to the counts of articles for topics
-
-        Parameters
-        ----------
-        None, requires counts to be created before this step
-
-        Returns
-        -------
-        None, assigns self._s and self._b which can be used for predictions
-        """
-
-        s = self.counts.copy()
-        b = s.copy()
-        alpha = 0.62
-        beta = 0.5
-        b[0,:] = (s[5,:]-s[0,:])/5
-        b[1,:] -= s[0,:]
-        for i in range(2, s.shape[0]):
-            s[i,:] = alpha * s[i,:] + (1 - alpha) * (s[i-1,:] + b[i-1,:])
-            b[i,:] = beta * (s[i,:] - s[i-1,:]) + (1 - beta) * b[i-1,:]
-        self._s = s
-        self._b = b
-
-    def predict_ahead(self, topic_index=0, periods_ahead=1):
-        """ Predicts topic counts a desired periods ahead
-
-        Parameters
-        ----------
-        topic_index: The index of the desired topic to see its counts and acceleration
-        periods_ahead: how many periods ahead to predict
-
-        Returns
-        -------
-        A predicted count of articles for that topic
-        """
-
-        return self._s[topic_index,-1] + periods_ahead * self._b[topic_index,-1]
-
-    # # Doesn't like pickling something about this class
-    # def to_pkl(filename='model.pkl'):
-    #     with open (filename, 'wb') as f:
-    #         pickle.dumb(self, f)
 
 if __name__ == '__main__':
-    from words_to_vals import NMF_Time
+    # from words_to_vals import NMF_Time
     df = pd.read_csv('temp_data1.csv',index_col=0)
     df = df[df['news_source'] == 'NYT']
     testy = NMF_Time()
-    testy.generate_topics(df['content'].values)
-    testy.perform_time_counting(df)
-    testy.calc_accel()
-    with open ('model.pkl', 'wb') as f:
-        pickle.dumb(testy, f)
+    testy.generate_topics(df['content'].values, min_df = 0.01, max_features = 10000, n_components=100)
+    testy.perform_time_counting_self(df)
+    CW = Count_Worker(testy)
+    with open('model.pkl', 'wb') as f:
+        pickle.dump(CW,f)

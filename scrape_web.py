@@ -142,7 +142,7 @@ def big_batch_nyt(month, year):
 
     Returns
     -------
-    None
+    df_tot: the dataframe now containing all articles from requested time period
     """
 
     nyt_key = os.environ['NYT_API_KEY']
@@ -156,7 +156,7 @@ def big_batch_nyt(month, year):
     save_rate = 25
     for i in range(len(content['response']['docs']) // save_rate):
         df_tot = nyt_batch_save(content['response']['docs'][i * save_rate : (i+1) * save_rate], df_tot)
-    df_tot = nyt_batch_save(content['response']['docs'][-(len(content['response']['docs']) % save_rate):], df_tot)
+    return nyt_batch_save(content['response']['docs'][-(len(content['response']['docs']) % save_rate):], df_tot)
 
 def nyt_batch_save (jsony, df_tot):
     """ Given a batch from a json response from a NYT API request done in big_batch_nyt, generates the content and writes it to disk
@@ -172,19 +172,18 @@ def nyt_batch_save (jsony, df_tot):
     """
 
     temp_cols = ['_id', 'content', 'headline', 'news_source', 'pub_date', 'section_name', 'web_url', 'word_count']
+    ''' Looks to remove duplicate articles based on '_id' '''
+    jsony = [d for d in jsony if d['_id'] not in df_tot['_id']]
     df = pd.DataFrame(jsony)
+    df['news_source'] = 'NYT'
     content_list = []
     for d in jsony:
-        d_id = d['_id']
-        link = d['web_url']
-        r = requests.get(link)
-        html = r.content
-        soup = bs4.BeautifulSoup(html, 'html.parser')
-        print(r.status_code, link)
+        r = requests.get(d['web_url'])
+        print(r.status_code, d['web_url'])
+        soup = bs4.BeautifulSoup(r.content, 'html.parser')
         article_content = ' '.join([i.text for i in soup.select('p.story-body-text')])
         content_list.append(article_content)
     df['content'] = content_list
-    df['news_source'] = 'NYT'
     df_tot = df_tot.append(df[temp_cols])
     print('saving')
     df_tot.to_csv('temp_data1.csv')
@@ -424,16 +423,18 @@ def foxy_table(links,titles,sections):
 
 
 def clean_up_df(df):
-    df.dropna(subset=['headline'], axis=0, inplace=True)
+    ''' Given a dataframe of articles, drops articles with no contents, drops duplcate articles, and converts pub_data to a datetime object '''
+    df.dropna(subset=['content'], axis=0, inplace=True)
     df.drop_duplicates(subset='headline', inplace=True)
     df['pub_date'] = pd.to_datetime(df['pub_date'])
+    df.sort('pub_date')
     df.to_csv('temp_data1.csv')
 
-
+ return ' '.join(lems)
 
 if __name__ == '__main__':
     sources = ['the-washington-post','bbc-news','cnn','breitbart-news']
-    big_batch_nyt(8, 2017)
+    big_batch_nyt(11, 2017)
     # The three general things you can run (Pick 1)
     # nyt_scrape_meta_continuous(days=16, end_date=dt.datetime(2017, 7, 25))    r = requests.get(link)
     # html = r.content
