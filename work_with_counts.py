@@ -12,6 +12,7 @@ class Count_Worker(object):
         self.total_counts = obj.total_counts
         self.topics = obj.topics
         self.times = obj.times
+        self.drop_useless_topics()
         self.calc_accel()
         self.double_exp_smoothing()
 
@@ -19,6 +20,7 @@ class Count_Worker(object):
         tsum = np.sum(self.topic_counts,axis=1)
         self.topic_counts = self.topic_counts[tsum >= useful_count,:]
         self.topics = self.topics[tsum >= useful_count,:]
+        self.topics = {i : self.topics[i,:] for i in range(self.topics.shape[0])}
 
 
     def calc_accel(self):
@@ -151,6 +153,12 @@ class Count_Worker(object):
 
     def bte (self, topic_index=0):
         model = pf.EGARCH(self.topic_counts[topic_index],p=1,q=1)
+        x = model.fit()
+        x.summary()
+        model.plot_fit()
+
+    def gasy (self, topic_index=0):
+        model = pf.GAS(ar=2, sc=2, data=self.topic_counts[topic_index], family=pf.Poisson())
         x = model.fit()
         x.summary()
         model.plot_fit()

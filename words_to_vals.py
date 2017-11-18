@@ -134,7 +134,7 @@ class NMF_Time():
             kwargs = dict()
         self._train_length = content.shape[0]
         t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = self._tokenize, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
-        nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True)
+        nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True, verbose = True)
         print('Starting Vectorizer')
         self._c = 0
         print('Tokenizing (1/{0})'.format(self._train_length), end="\r")
@@ -155,6 +155,7 @@ class NMF_Time():
         self.topics = np.array(top_words)
 
 
+        # TODO: when delta is set to 1 day, it creates a weird effect, might look to modify the time to 0:00:00 to correct for that
     def perform_time_counting_self (self, df, delta=dt.timedelta(days=1), threshold=0.1):
         """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
         This assumes that df content is that the model was fitted on
