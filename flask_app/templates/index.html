@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+  <head>
+    <meta charset="UTF-8">
+    <title>Trending News Article Topics</title>
+
+    <!-- You can download css and js from https://github.com/mistic100/jQCloud/tree/master/dist -->
+    <link rel="stylesheet" href="../static/css/jqcloud.min.css">
+
+    <!-- You need to include jquery before the jqcloud.js, you can get it from -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="../static/js/jqcloud.min.js"></script>
+
+    <!-- here we included our script.js -->
+    <script type="text/javascript" src="../static/js/script.js"></script>
+  </head>
+  <body>
+    <div id="input_area">
+      <form action="/">
+        <select name="topic_select">
+        	{% for topic in total_topics %}
+        		{% if topic == current_topic %}
+        			<option selected value="{{ topic }}">{{ topic }}</option>
+        		{% else %}
+        			<option value="{{ topic }}">{{ topic }}</option>
+        		{% endif %}
+        	{% endfor %}
+        </select>
+        <input name="Select" type="submit">
+      </form>
+    </div>
+    <!-- <div id="count_plot">
+    </div> -->
+    {% if topic == None %}
+      <h3> Select Topic for Word Cloud </h3>
+    {% else %}
+      <div id="word_cloud">
+      </div>
+    {% endif %}
+  </body>
+  <footer>
+    <a href="http://mistic100.github.io/jQCloud/index.html"> Word Cloud produced by jQCloud</a>
+    <h5> Website by Peter Russo </h5>
+    <a href="https://github.com/s0eger/working_title"> github repo </a>
+  </footer>
+</html>

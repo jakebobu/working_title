@@ -8,20 +8,30 @@ import pyflux as pf
 class Count_Worker(object):
     """docstring for Count_Worker."""
     def __init__(self, obj):
-        self.topic_counts = obj.counts.T
+        self.all_counts = obj.counts.T
+        self.topic_counts = self.all_counts.copy()
         self.total_counts = obj.total_counts
-        self.topics = obj.topics
+        self.all_topics = obj.topics
+        self.topics = self.all_topics.copy()
+        self.all_dc = obj.topic_dc
+        self.dc = self.all_dc.copy()
         self.times = obj.times
+        self.W = obj.W
+        self.H = obj.nmf.components_
+        self.web_index = None
+
+    def setup_work(self):
         self.drop_useless_topics()
         self.calc_accel()
         self.double_exp_smoothing()
+        self.data_smoothing()
 
-    def drop_useless_topics (self, useful_count = 10):
-        tsum = np.sum(self.topic_counts,axis=1)
-        self.topic_counts = self.topic_counts[tsum >= useful_count,:]
-        self.topics = self.topics[tsum >= useful_count,:]
+    def drop_useless_topics (self, useful_count = 3):
+        tsum = np.sum(self.all_counts,axis=1)
+        self.topic_counts = self.all_counts[tsum >= useful_count,:]
+        self.topics = self.all_topics[tsum >= useful_count,:]
         self.topics = {i : self.topics[i,:] for i in range(self.topics.shape[0])}
-
+        self.dc = self.all_dc[tsum >= useful_count]
 
     def calc_accel(self):
         """ Using the calculated counts of articles in the topics, finds the velocity and acceleration of those counts across all topics
@@ -136,6 +146,29 @@ class Count_Worker(object):
         self._s = s
         self._b = b
 
+    def exp_smooth_range(self, topic_index=0):
+        alphas = [0.1,0.5,0.9]
+        betas = [0.1,0.5,0.9]
+        s_vals = dict()
+        b_vals = dict()
+        for al in alphas:
+            for bt in betas:
+                s = self.topic_counts[topic_index].copy()
+                b = s.copy()
+                b[0] = (s[5]-s[0])/5
+                b[1] -= s[0]
+                for i in range(2,s.shape[0]):
+                    s[i] = al*s[i]+(1-al)*(s[i-1]+b[i-1])
+                    b[i] = bt*(s[i]-s[i-1])+(1-bt)*b[i-1]
+                s_vals[(al,bt)] = s
+                b_vals[(al,bt)] = b
+        plt.close('all')
+        plt.plot(self.times,self.topic_counts[topic_index], alpha=0.5, label='Counts')
+        for k, v in s_vals.items():
+            plt.plot(self.times, v, '--', label='a:{} , b:{}'.format(k[0],k[1]))
+        plt.legend()
+        plt.show()
+
     def predict_ahead(self, topic_index=0, periods_ahead=1):
         """ Predicts topic counts a desired periods ahead
 
@@ -162,3 +195,76 @@ class Count_Worker(object):
         x = model.fit()
         x.summary()
         model.plot_fit()
+
+    def data_smoothing(self):
+        import scipy.stats as scs
+        N = 13
+        kernel = np.ones((N,))
+        for i in range (N):
+            kernel[i] = scs.norm(scale=4).pdf(i - N//2)
+        kernel = kernel/np.sum(kernel)
+        self.smooth_data = 1.0 * self.topic_counts.copy()
+        self.tot_sm = np.convolve(1.0*self.total_counts, kernel, mode='same')
+        for i in range(self.topic_counts.shape[0]):
+            self.smooth_data[i] = np.convolve(self.topic_counts[i],kernel,mode='same')
+
+    def plot_smoothing_techniques(self):
+        plt.close('all')
+        plt.subplot(3,1,1)
+        plt.title('Simple Counts')
+        for i in range(self.topic_counts.shape[0]):
+            plt.plot(self.times, self.topic_counts[i], label=i)
+        plt.subplot(3,1,2)
+        plt.title('Smoothed Counts (Avg)')
+        for i in range(self.topic_counts.shape[0]):
+            plt.plot(self.times, self.smooth_data[i], label=i)
+        plt.subplot(3,1,3)
+        plt.title('Smoothed Counts (Exp)')
+        for i in range(self.topic_counts.shape[0]):
+            plt.plot(self.times, self._s[i], label=i)
+        plt.show()
+
+    # def triple_exp_smoothing(self):
+    #     s = self.smooth_data.copy()
+    #     b = s.copy()
+    #     c = b.copy()
+    #     alpha = 0.5
+    #     beta = 0.5
+    #     gamma = 0.5
+    #     L = 7*24/4 # weekly, sampling rate is 4 hours
+
+    # Finds alpha/beta with lowest error
+    def dc (self, periods_ahead = 1):
+        N = 11
+        alphas = np.linspace(0,1,N)
+        betas = alphas.copy()
+        errors = np.zeros(N)
+        for i in range(N):
+            for j in range(N):
+                errors[i,j] = double_exp_comparions(alpha = alphas[i], beta = betas[j],periods_ahead = periods_ahead)
+        e_min = np.argmin(errors)
+        return alphas[e_min // N], betas[e_min % N]
+
+    def double_exp_comparions(self, alpha=0.5, beta=0.5, periods_ahead=1):
+        error = 0
+        s = self.smooth_data.copy()
+        b = s.copy()
+        b[0,:] = (s[5,:]-s[0,:])/5
+        b[1,:] -= s[0,:]
+        for i in range(2, s.shape[1]):
+            s[:,i] = alpha * s[:,i] + (1 - alpha) * (s[:,i-1] + b[:,i-1])
+            b[:,i] = beta * (s[:,i] - s[:,i-1]) + (1 - beta) * b[:,i-1]
+        for i in range(s.shape[0]):
+            for j in range(1, s.shape[1]):
+                error += np.abs(self.smooth_data[i,j] - (s[i,j-1] + periods_ahead * b[i,j-1]))/s.shape[1]
+        return error
+
+
+
+
+
+
+
+
+
+# END

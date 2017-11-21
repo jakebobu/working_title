@@ -46,37 +46,32 @@ from string import punctuation
 import matplotlib.pyplot as plt
 import pyflux as pf
 from work_with_counts import Count_Worker
-# class NMF_Time_Save ():
-#     def __init__(self, obj):
-#         self.top_n_words = obj.top_n_words
-#         # self.t_vect = obj.t_vect
-#         self.nmf = obj.nmf
-#         self.counts = obj.counts
-#         self.total_counts = obj.total_counts
-#         self.times = obj.times
-#         self.topics = obj.topics
 
-    # def load_save(self, file_location):
-    #     with open (file_location, 'rb') as f:
-    #         save_obj = pickle.load(f)
-    #     # self.t_vect = save_obj.t_vect
-    #     self.nmf = save_obj.nmf
-    #     self.top_n_words = save_obj.top_n_words
-    #     self.topics = save_obj.topics
-    #     self.counts = save_obj.counts
-    #     self.total_counts = save_obj.total_counts
-    #     self.times = save_obj.times
+
+nlp = spacy.load('en')
+spacy_tokenizer = English().Defaults.create_tokenizer(nlp)
+punct = punctuation + '’' + '--' + '’s'
+
+def _tokenize(doc):
+    '''
+        tokenizer function to use for the TfidfVectorizer class
+        Currently using spacy, can replace with nltk stuff as well for comparison
+    '''
+    # ITER_COUNT += 1
+    # print('Tokenizing ({0}/{1})'.format(ITER_COUNT, ITER_LENGTH), end="\r")
+    wList = [t.text if t.lemma_ == '-PRON-' else t.lemma_ for t in [token for token in spacy_tokenizer(doc) if token.is_alpha]]
+    return [token for token in wList if token not in punct and '@' not in token]
 
 
 class NMF_Time():
     """docstring for NMF_Time."""
-    def __init__(self, top_n_words=10):
+    def __init__(self, top_n_words=10, load_model=False, verbose=False):
         """ Initialization of class
 
         Parameters
         ----------
         top_n_words: the number of words you want to show per topic
-
+        load_model: whether or not to load the previously saved model under 'model/'
         """
 
         print('Intializing Class')
@@ -87,31 +82,20 @@ class NMF_Time():
         self.total_counts = None
         self.times = None
         self.topics = None
-        self.nlp = spacy.load('en')
-        self._spacy_tokenizer = English().Defaults.create_tokenizer(self.nlp)
-        self._c = 0
-        self._train_length = 0
-        self._punctuation = punctuation + '’' + '--' + '’s'
-
-    def _tokenize(self, doc):
-        '''
-            tokenizer function to use for the TfidfVectorizer class
-            Currently using spacy, can replace with nltk stuff as well for comparison
-        '''
-        self._c += 1
-        print('Tokenizing ({0}/{1})'.format(self._c, self._train_length), end="\r")
-        wList = [t.text if t.lemma_ == '-PRON-' else t.lemma_ for t in [token for token in self._spacy_tokenizer(doc) if token.is_alpha]]
-        return [token for token in wList if token not in self._punctuation and '@' not in token]
-
+        self.topic_dc = None
+        self.verbose = verbose
+        if load_model:
+            self.load_model()
 
     # Need to cap my dictionary or modify min_df
-    def generate_topics (self, content, **kwargs):
+    def generate_topics (self, content, tok, **kwargs):
         """ Converts a list of str containing the article text into a feature matrix
         Allows for ability to permutate the functional components to form comparisons
 
         Parameters
         ----------
         content: article contents as a list of str
+        tok: the tokenizer function to use within the vectorizer
 
         kwargs
         ---------
@@ -132,30 +116,54 @@ class NMF_Time():
 
         if kwargs == None:
             kwargs = dict()
-        self._train_length = content.shape[0]
-        t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = self._tokenize, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
-        nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True, verbose = True)
-        print('Starting Vectorizer')
-        self._c = 0
-        print('Tokenizing (1/{0})'.format(self._train_length), end="\r")
-        t_mat = t_vect.fit_transform(content)
-        print('Tokenizing completed ({0}/{0})'.format(self._train_length))
-        print('Starting NMF')
-        self.W = nmf.fit_transform(t_mat)
-        print('Topics Generated')
-        self.t_vect = t_vect
-        self.nmf = nmf
-        H = nmf.components_
-        vocab = { v: k for k, v in t_vect.vocabulary_.items()}
+        self._fit_vectorizer(content,tok,kwargs)
+        self._fit_factorizer(kwargs)
+        self._generate_topics()
+        # t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = tok, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
+        # nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True, verbose = self.verbose)
+        # print('Starting Vectorizer')
+        # t_mat = t_vect.fit_transform(content)
+        # print('Tokenizing completed')
+        # print('Starting NMF')
+        # self.W = nmf.fit_transform(t_mat)
+        # print('Topics Generated')
+        # self.t_vect = t_vect
+        # self.nmf = nmf
+        # H = nmf.components_
+        # vocab = { v: k for k, v in t_vect.vocabulary_.items()}
+        # top_words = []
+        # temp_dict = []
+        # ordering = H.argsort(axis=1)[:,:-self.top_n_words-1:-1]
+        # for i in range(H.shape[0]):
+        #     tdict = {vocab[ordering[i,j]] : H[i, ordering[i,j]] for j in range(self.top_n_words)}
+        #     temp_dict.append(tdict)
+        #     tp = [vocab[ordering[i,j]] for j in range(self.top_n_words)]
+        #     top_words.append(tp)
+        # self.topics = np.array(top_words)
+        # self.topic_dc = np.array(temp_dict)
+
+    def _fit_vectorizer (self, content, tok, **kwargs):
+        self.t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = tok, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
+        self.t_mat = self.t_vect.fit_transform(content)
+
+    def _fit_factorizer (self, **kwargs):
+        self.nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True, verbose = self.verbose)
+        self.W = self.nmf.fit_transform(self.t_mat)
+
+    def _generate_topics (self):
+        H = self.nmf.components_
+        vocab = { v: k for k, v in self.t_vect.vocabulary_.items()}
         top_words = []
+        temp_dict = []
         ordering = H.argsort(axis=1)[:,:-self.top_n_words-1:-1]
         for i in range(H.shape[0]):
+            tdict = {vocab[ordering[i,j]] : H[i, ordering[i,j]] for j in range(self.top_n_words)}
+            temp_dict.append(tdict)
             tp = [vocab[ordering[i,j]] for j in range(self.top_n_words)]
             top_words.append(tp)
         self.topics = np.array(top_words)
+        self.topic_dc = np.array(temp_dict)
 
-
-        # TODO: when delta is set to 1 day, it creates a weird effect, might look to modify the time to 0:00:00 to correct for that
     def perform_time_counting_self (self, df, delta=dt.timedelta(days=1), threshold=0.1):
         """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
         This assumes that df content is that the model was fitted on
@@ -194,6 +202,49 @@ class NMF_Time():
         self.times = np.array(time_periods)
         print('Time Counts is Complete')
 
+    def comprehensive_time_count_self (self):#, df, delta = dt.timedelta(days=1)):
+        """ Generates plots to look at the affect of the threshold on the counting of articles for a topic.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        A figure containing plots of article counts against thresholds
+        - Plot of % of articles in corpus that meet the threshold of a topic
+        - Plot of average number of topics per article
+        - Plot of topics with atleast a critical number of related articles
+        """
+
+        threshold = np.logspace(-2,-.7,100)
+        percent_counts = np.zeros(100)
+        average_topics = np.zeros(100)
+        n = [3,5,7,10]
+        valid_topics = np.zeros((100, len(n)))
+        for i, t in enumerate(threshold):
+            percent_counts[i] = np.sum(1*(np.max(self.W, axis=1) >= t))/self.W.shape[0]
+            average_topics[i] = np.sum(1*(self.W>=t))/self.W.shape[0]
+            for j, nn in enumerate(n):
+                valid_topics[i,j] = np.sum(1*(np.sum(1*(self.W >=t), axis=0)>=nn))/self.W.shape[1]
+        plt.subplot(2,2,1)
+        plt.title('Percentage of Articles with a Topic above Threshold')
+        plt.plot(threshold,percent_counts)
+        plt.xlabel('Threshold')
+        plt.ylabel('% of Articles')
+        plt.subplot(2,2,2)
+        plt.title('Average # of Topics per Article above Threshold')
+        plt.plot(threshold,average_topics)
+        plt.xlabel('Threshold')
+        plt.ylabel('Average # of Topics')
+        plt.subplot(2,1,2)
+        plt.title('Percentage of Topics with # of related Articles >= n')
+        for i in range(len(n)):
+            plt.plot(threshold, valid_topics[:,i],label='n={}'.format(n[i]))
+        plt.legend()
+        plt.xlabel('Threshold')
+        plt.ylabel('% of Topics with Articles')
+        plt.show()
 
     def perform_time_counting_new (self, df, delta=dt.timedelta(days=1), threshold=0.1):
         """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
@@ -230,8 +281,6 @@ class NMF_Time():
             print('Time period left (days): {}'.format((ending_point-start_time).days))
             df_dt = df[(df['pub_date'] < end_time) & (df['pub_date'] >= start_time)]
             dt_content = df_dt['content'].values
-            self._c = 0
-            self._train_length = dt_content.shape[0]
             topic_vals = self.nmf.transform(self.t_vect.transform(dt_content))
             topic_pick = np.sum(1*(topic_vals >= threshold),axis=0)
             topic_counts.append(topic_pick)
@@ -244,14 +293,44 @@ class NMF_Time():
         self.times = np.array(time_periods)
         print('Time Counts is Complete')
 
+    def save_model(self):
+        """ Pickle dumps the object into relevant files under directory 'model/'. Requires fitting of model and time counting to be done.
 
-if __name__ == '__main__':
-    # from words_to_vals import NMF_Time
-    df = pd.read_csv('temp_data1.csv',index_col=0)
-    df = df[df['news_source'] == 'NYT']
-    testy = NMF_Time()
-    testy.generate_topics(df['content'].values, min_df = 0.01, max_features = 10000, n_components=100)
-    testy.perform_time_counting_self(df)
-    CW = Count_Worker(testy)
-    with open('model.pkl', 'wb') as f:
-        pickle.dump(CW,f)
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
+
+        cw = Count_Worker(self)
+        with open('model/output_data.pkl', 'wb') as od:
+            pickle.dump(cw, od)
+        with open('model/vectorizer.pkl', 'wb') as vc:
+            pickle.dump(self.t_vect, vc)
+        with open('model/factorization.pkl', 'wb') as fc:
+            pickle.dump(self.nmf, fc)
+
+    def load_model(self):
+        """ Pickle loads this class from relevant files under directory 'model/'.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+        """
+
+        with open('model/output_data.pkl', 'rb') as od:
+            cw = pickle.load(od)
+        with open('model/vectorizer.pkl', 'rb') as vc:
+            self.t_vect = pickle.load(vc)
+        with open('model/factorization.pkl', 'rb') as fc:
+            self.nmf = pickle.load(fc)
+        self.topics = cw.all_topics
+        self.counts = cw.all_counts.T
+        self.topic_dc = cw.all_dc
