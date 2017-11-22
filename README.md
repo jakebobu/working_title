@@ -3,15 +3,15 @@ dsi project markdown. [Witty pun here]
 
 ## Table Of Contents
 
-1. [Concept](#concept)
-2. [Process](#process)
-3. [Data](#data)
+* [Concept](#concept)
+* [Process](#process)
+* [Data](#data)
   * [Data Storage](#data-storage)
   * [Data Manipulation](#data-manipulation)
-4. [Modeling](#modeling)
+* [Modeling](#modeling)
   * [Hyper-Parameter Selection](#hyper-parameter-selection)
   * [Predictive Algorithms](#numerical-predictive-acceleration-algorithms)
-5. [Web App](#web-app)
+* [Web App](#web-app)
   * [Visualization](#visualization)
   * [AWS EC2 Instance](#aws-ec2-instance)
 
@@ -24,6 +24,7 @@ Predictive capability to grab future trends based on time series analysis of top
 ### Workflow Visualization <Block Diagram>
 
   Data Collection (Web Scrapping) -> Data Storage (S3) -> Token/Lemmy(Spacy) -> Vectorizing/Topic Generating (sklearn) -> Time Series Analysis (Still comparing) -> Web App (Flask)
+
   <!-- ![Name](images/<filename>.png)
 
   <br /> -->
@@ -48,10 +49,13 @@ News Articles from all topics/sections over a period of at the time previous 5 m
 
 * id : unique identifier provided by source if one exists
 
+<include remainder of column descriptions here>
 
 ### Data Manipulation
 
 First goal is top convert article text into a list of words (tokenizing) and group similar words, especially synonyms, into a singular root word (lemmatizing). I utilized Spacy <url link> to accomplish this task. Additionally, generic article content were added to the list of stop words to exclude them from final list of words. This includes things like author bylines, contact us lines, and publication time stamps that don't add any substance to the content of an article. Lastly, tokens containing only punctuation or numbers were removed from the list for the similar reason.
+
+<Show examples of this process, text to tokens>
 
 ## Modeling
 
