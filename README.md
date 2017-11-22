@@ -1,5 +1,19 @@
 # working_title
-dsi project
+dsi project markdown. [Witty pun here]
+
+## Table Of Contents
+
+1. [Concept](#concept)
+2. [Process](#process)
+3. [Data](#data)
+  a) [Data Storage](#data-storage)
+  b) [Data Manipulation](#data-manipulation)
+4. [Modeling](#modeling)
+  a) [Hyper-Parameter Selection](#hyper-parameter-selection)
+  b) [Predictive Algorithms](#numerical-predictive-acceleration-algorithms)
+5. [Web App](#web-app)
+  a) [Visualization](#visualization)
+  b) [AWS EC2 Instance](#aws-ec2-instance)
 
 ## Concept
 
@@ -7,27 +21,21 @@ Predictive capability to grab future trends based on time series analysis of top
 
 ## Process
 
-#### Start with having workflow given as a visualization
+### Workflow Visualization <Block Diagram>
+
+  <!-- ![Name](images/<filename>.png)
+
+  <br /> -->
 
 ## Data
 
-Depending on size may separate by source
-Again if given enough articles may separate by provided topic/section
-Otherwise one collective bin of all articles given a timestamp
+News Articles from all topics/sections over a period of at the time previous 5 months (7/1/2017 - 11/15/2017) [End date will change]
 
 ### Detail sources, what news sources needed what, show how to reproduce data collection
-* How I got keys, from whom
-* requests library along with BeautifulSoup for we scraping
-* For News API difference between description and full text
+* How I got keys, from whom (NYT API website, NEWS API website)
+* Requests library along with BeautifulSoup for web scraping
 
-## Data Storage
-
-nyt wash post, bbc news, breitbart, CNN, MSNBC
-
-Look at WSJ
-
-I am temporarily storing it on a MongoDB locally
-Pete - move MongoDB credentials into environ
+### Data Storage
 
 * Collective data is stored on S3 in following fashion:
 
@@ -35,59 +43,93 @@ Pete - move MongoDB credentials into environ
 | - | -------------------- | --------------------- | :--------: | ------------ |:-------:| :--------: | ----------- | ----------- |
 | 0 | 09ig34w09ibs90iw34sb | Top 10 Reasons To...  | 0000-00-00 | NA           | https:  | 512        | This is a   | NYT         |
 | 1 | tu8936nmvb09u8mtv4mu | Newsy News News...    | 0000-00-00 | Popular      | hhtps:  | 256        | story about | Wash Post   |
-| 2 | tvs3um89psv48um9pet3 | Breaking News Here... | 0000-00-00 | Sports       | hhtps:  | 123        | how my life | ESPN        |
+| 2 | tvs3um89psv48um9pet3 | Breaking News Here... | 0000-00-00 | Sports       | https:  | 123        | how my life | ESPN        |
 
-* id : unique identifier provided by source
+* id : unique identifier provided by source if one exists
 
 
-## Data Manipulation
+### Data Manipulation
 
-Test different methods of time series analysis <readings>
-Try different methods of tokenizing/stemming/lemming spacy
-
-Need to confirm consistency of column types across news sources (looking specifically at timestamps)
+First goal is top convert article text into a list of words (tokenizing) and group similar words, especially synonyms, into a singular root word (lemmatizing). I utilized Spacy <url link> to accomplish this task. Additionally, generic article content were added to the list of stop words to exclude them from final list of words. This includes things like author bylines, contact us lines, and publication time stamps that don't add any substance to the content of an article. Lastly, tokens containing only punctuation or numbers were removed from the list for the similar reason.
 
 ## Modeling
 
-Rough numerical accelerated calculations
-Topic selection is significant
-Being able to generate new topics
+### Hyper-parameter Selection
 
-Autoregressive–moving-average model
-Autoregressive conditional heteroskedasticity
+Topic selection is significant to the outcome of the predictive modeling. Varying from a small selection of topics at 10, to a comprehensive selection at 1000 topics, a final topic size of [] was selected.
 
-Holt-Winter Model (seasonality) exponentially weighted average
-
-stats.models
-pyflux.models -> ARIMA(X), GARCH, EGARCH, beta-t-EGARCH, GAS
-
-Financial models 	(Read into more)
-    Black–Derman–Toy Black–Karasinski Black–Scholes Chen Constant elasticity of variance (CEV) Cox–Ingersoll–Ross (CIR) Garman–Kohlhagen Heath–Jarrow–Morton (HJM) Heston Ho–Lee Hull–White LIBOR market Rendleman–Bartter SABR volatility Vašíček Wilkie
+<Show figure of Reconstruction error and similarities here>
 
 
-nmf
+Threshold selection of minimum similarity between article and content determines how many articles fall within each topic. Comparing the article selections provided by ranging threshold shows an optimal threshold of ~0.05. Optimal was specified by being small enough to have the greatest percentage of articles in related to a  topic while not too small and having articles related to multiple topics.
+
+<The plot of threshold selection>
+
+
+### Numerical Predictive Acceleration Algorithms <Rename>
+
+Currently comparing three(ish) time series predictive techniques
+(Add descriptions of each in their sections)
+
+1) Autoregressive–moving-average model
+
+2) Holt-Winter Model (seasonality) exponentially weighted average
+  * Double vs Triple exponential
+
+3) pyflux.models
+  * ARIMAX
+  * beta-t-EGARCH
+  * GAS
+
+<Plot of differences in errors here>
+
 
 ## Web App
-Ran from AWS
+Ran from AWS utilizing flask through python.
+URL found here (when up and running)
 
-### Live Data
+<Image of index page here>
+
+
+
+### Visualization
+Given model, show probability of new trending topics
+* Plots across time
+
+<Images Here>
+
+
+* Word Clouds of the top [n] words per topic.
+
+
+<Images Here>
+
+### AWS EC2 Instance
+* Throw specs of final utilized instance to run web app
+* General instructions to setup instance (depends on how user wants to provide data):
+      AWS setup -> IAM role to get data from S3 bucket
+      EC2 Instance -> install boto3: pip install boto3
+                      b3c = boto3.resource('s3')
+                      bucket = b3c.Bucket('peterrussodsiproj')
+                      <In repo root directory>
+                      bucket.download_file('temp_data1.csv','temp_data1.csv')
+                      install spacy: conda install -c conda-forge spacy
+                                 python -m spacy download en
+                      install pyflux: pip install pyflux
+
+### Live Data (A Future Goal)
 Streaming data from news sources (decide upon update interval daily/weekly, create script to do that)
 May refit on old predicted data, and predict on new data
 Using time series analysis to pull rising trends
 Currently thinking dashboard ran through flask unless I find a better alternative
 
-### Visualization
-Given model, show probability of new trending topics
-* Word clouds
-* Plots across time
-
-## Deliverables
+## Deliverables (You want this in markdown? if so, where?)
 * Model that can grab current data over a prior period and predict trendingnessity(tm)
 * Web App to present that data (probably through flask on EC2 instance)
 * Clean and efficient storage of model and data through S3 and on EC2 instance
 
 
-## Schedy
+## Schedy (for me)
 
 11/14-11/17
 * convert from json dump into an organized fashion containing only important features
@@ -113,38 +155,30 @@ Given model, show probability of new trending topics
 
 
 ## Future Goals
-Everything I can't do in time
-Chronos Job as future
+* 'Live' Data streaming
+* Analyze comparisons/separations across sources or across news sections (Sports, World, Arts)
+*
 
-To Read:
-https://en.wikipedia.org/wiki/Stochastic_simulation
-https://en.wikipedia.org/wiki/Time_series
-https://en.wikipedia.org/wiki/Autoregressive%E2%80%93moving-average_model
-
-
-Things I did today (11/15)
-Converted mvp pipeline into a class object
-Add verbosity into class object
-Did some modifications on spacy toky/lemy
-Generate counts of each article in terms of topics by specified dt
-Did rough calc to get vel and accel, shows times where v > 0 and a > 0
-
-TODO tomorrow (11/16)
-Look at what I got, see if it makes sense (tokenizer needs more work. 1 topic is phone numbers, emails contact us at) taxes -> taxis
-Improve accel algorithm, look for algorithms that utilize acceleration and are powerful in prediction
-Have a feeling that some newfs sources articles are too sparse (across time creating) creating topics by source itself
-Consolidate all variables I can test on in one location (make easier for myself later when playing with them)
-Look to set an initial threshold or comparison metric for acceleration. See what I am seeing rising and when, again based on accel alogithm
-Pickle problem, why can't I pickle my model
+## Acknowledgments
+Again grab url's for this section
+* spacy
+* pyflux
+* jQCloud
+* News Sources I utilized for making their articles available
+* And from viewers like you
 
 
+<!--
+AWS setup -> IAM role to get data from S3 bucket
+EC2 Instance -> install boto3: pip install boto3
+                    b3c = boto3.resource('s3')
+                    bucket = b3c.Bucket('peterrussodsiproj')
+                    <In repo root directory>
+                    bucket.download_file('temp_data1.csv','temp_data1.csv')
+                install spacy: conda install -c conda-forge spacy
+                               python -m spacy download en
+                install pyflux: pip install pyflux
 
+ctrl+b release then d
 
-
-
-
-
-
-
-
-*** END  ***
+*** END  *** -->

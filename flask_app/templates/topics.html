@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+  <head>
+    <meta charset="UTF-8">
+    <title>Topics Containing A Specific Token</title>
+    <h1> Topics Containing '{{ token }}' </h1>
+  </head>
+  <body>
+    <div id="topic_list">
+      <form action="../../" name="c_token">
+        {% for pair in topic_list %}
+          <p> <button type="button" type="submit" value= {{ pair[0] }}> View </button>
+            word # {{ pair[1] }} in topic {{ pair[0] }}: {{ pair[2] }}...
+          </p>
+        {% endfor %}
+      </form>
+    </div>
+    <div id="navigation">
+
+    </div>
+  </body>
+  <footer>
+    <h3> Website by Peter Russo </h3>
+    <a href="https://github.com/s0eger/working_title"> github repo </a>
+  </footer>
+</html>
