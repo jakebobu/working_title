@@ -6,14 +6,14 @@ dsi project markdown. [Witty pun here]
 1. [Concept](#concept)
 2. [Process](#process)
 3. [Data](#data)
-  a) [Data Storage](#data-storage)
-  b) [Data Manipulation](#data-manipulation)
+  * [Data Storage](#data-storage)
+  * [Data Manipulation](#data-manipulation)
 4. [Modeling](#modeling)
-  a) [Hyper-Parameter Selection](#hyper-parameter-selection)
-  b) [Predictive Algorithms](#numerical-predictive-acceleration-algorithms)
+  * [Hyper-Parameter Selection](#hyper-parameter-selection)
+  * [Predictive Algorithms](#numerical-predictive-acceleration-algorithms)
 5. [Web App](#web-app)
-  a) [Visualization](#visualization)
-  b) [AWS EC2 Instance](#aws-ec2-instance)
+  * [Visualization](#visualization)
+  * [AWS EC2 Instance](#aws-ec2-instance)
 
 ## Concept
 
@@ -23,6 +23,7 @@ Predictive capability to grab future trends based on time series analysis of top
 
 ### Workflow Visualization <Block Diagram>
 
+  Data Collection (Web Scrapping) -> Data Storage (S3) -> Token/Lemmy(Spacy) -> Vectorizing/Topic Generating (sklearn) -> Time Series Analysis (Still comparing) -> Web App (Flask)
   <!-- ![Name](images/<filename>.png)
 
   <br /> -->
