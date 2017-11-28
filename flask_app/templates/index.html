@@ -16,10 +16,17 @@
   </head>
   <body>
     <div id="input_area">
+      <h4> View topics from word </h4>
+      <form action="/topics/">
+        See Topics from Word: <input type="text" name="c_token" value=token>
+        <input type="submit" value ="View Token"><br>
+      </form>
+      <br>
+      <h4> View trends of topic <h4>
       <form action="/">
         <select name="topic_select">
         	{% for topic in total_topics %}
-        		{% if topic == current_topic %}
+        		{% if topic == total_topics[current_topic+1] %}
         			<option selected value="{{ topic }}">{{ topic }}</option>
         		{% else %}
         			<option value="{{ topic }}">{{ topic }}</option>
@@ -28,18 +35,22 @@
         </select>
         <input type="submit" value="View Topic">
       </form>
+      <br>
     </div>
+    {% if current_topic == -1 %}
+    <h3> Select Topic for More Info </h3>
+    {% else %}
+    <form action="/topic_articles/">
+      <button type="submit" name="topic_index" value={{ current_topic }}> View Articles </button>
+    </form>
+    <h2> Words in Selected Topic </h2>
+    <div id="word_cloud">
+    </div>
+    {% endif %}
     <div class="count_plot">
-      <h3> {{ plot_title }} </h3>
+      <h2> {{ plot_title }} </h2>
       <img src="/word_plot.png" alt="Count Plot">
     </div>
-    {% if current_topic == total_topics[0] %}
-      <h3> Select Topic for Word Cloud </h3>
-    {% else %}
-      <h3> Word Cloud Here </h3>
-      <div id="word_cloud">
-      </div>
-    {% endif %}
   </body>
   <footer>
     <h3> Website by Peter Russo </h3>

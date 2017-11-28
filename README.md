@@ -1,6 +1,9 @@
 # working_title
 dsi project markdown. [Witty pun here]
 
+<!-- TODO: link to relevant scripts for their respective sections here -->
+<!-- Requires final model to be done and scripts to be reorganized into logical structure -->
+
 ## Table Of Contents
 
 * [Concept](#concept)
@@ -14,6 +17,9 @@ dsi project markdown. [Witty pun here]
 * [Web App](#web-app)
   * [Visualization](#visualization)
   * [AWS EC2 Instance](#aws-ec2-instance)
+* [Future Goals](#future-goals)
+  * [Live Data](#live-data)
+* [Acknowledgments](#acknowledgments)
 
 ## Concept
 
@@ -68,7 +74,9 @@ Topic selection is significant to the outcome of the predictive modeling. Varyin
 
 Threshold selection of minimum similarity between article and content determines how many articles fall within each topic. Comparing the article selections provided by ranging threshold shows an optimal threshold of ~0.05. Optimal was specified by being small enough to have the greatest percentage of articles in related to a  topic while not too small and having articles related to multiple topics.
 
-<The plot of threshold selection>
+![Threshold Selection](readme_images/article_threshold.png "Threshold Selection for Article to Topic Similarity")
+
+<br>
 
 
 ### Numerical Predictive Acceleration Algorithms <Rename>
@@ -80,6 +88,12 @@ Currently comparing three(ish) time series predictive techniques
 
 2) Holt-Winter Model (seasonality) exponentially weighted average
   * Double vs Triple exponential
+
+<br>
+
+![Double Exponential Hyper-parameters](readme_images/double_exp_param_search.png "Optimal Double Exponential Hyper-Parameters of alpha=0.37, beta=1.0")
+
+<br>
 
 3) pyflux.models
   * ARIMAX
@@ -112,8 +126,8 @@ Given model, show probability of new trending topics
 ### AWS EC2 Instance
 * Throw specs of final utilized instance to run web app
 * General instructions to setup instance (depends on how user wants to provide data):
-      AWS setup -> IAM role to get data from S3 bucket
-      EC2 Instance -> install boto3: pip install boto3
+        AWS setup -> IAM role to get data from S3 bucket
+        EC2 Instance -> install boto3: pip install boto3
                       b3c = boto3.resource('s3')
                       bucket = b3c.Bucket('peterrussodsiproj')
                       <In repo root directory>
@@ -122,16 +136,38 @@ Given model, show probability of new trending topics
                                  python -m spacy download en
                       install pyflux: pip install pyflux
 
-### Live Data (A Future Goal)
+
+## Future Goals
+
+### Live Data
 Streaming data from news sources (decide upon update interval daily/weekly, create script to do that)
 May refit on old predicted data, and predict on new data
 Using time series analysis to pull rising trends
 Currently thinking dashboard ran through flask unless I find a better alternative
 
-## Deliverables (You want this in markdown? if so, where?)
-* Model that can grab current data over a prior period and predict trendingnessity(tm)
-* Web App to present that data (probably through flask on EC2 instance)
-* Clean and efficient storage of model and data through S3 and on EC2 instance
+
+## Acknowledgments
+Again grab url's for this section
+* spacy
+* pyflux
+* jQCloud
+* News Sources I utilized for making their articles available
+* And from viewers like you
+
+
+
+<!-- AWS setup -> IAM role to get data from S3 bucket
+EC2 Instance -> install boto3: pip install boto3
+                    b3c = boto3.resource('s3')
+                    bucket = b3c.Bucket('peterrussodsiproj')
+                    <In repo root directory>
+                    bucket.download_file('temp_data1.csv','temp_data1.csv')
+                install spacy: conda install -c conda-forge spacy
+                               python -m spacy download en
+                install pyflux: pip install pyflux
+
+ctrl+b release then d
+
 
 
 ## Schedy (for me)
@@ -159,31 +195,7 @@ Currently thinking dashboard ran through flask unless I find a better alternativ
 
 
 
-## Future Goals
-* 'Live' Data streaming
-* Analyze comparisons/separations across sources or across news sections (Sports, World, Arts)
-*
-
-## Acknowledgments
-Again grab url's for this section
-* spacy
-* pyflux
-* jQCloud
-* News Sources I utilized for making their articles available
-* And from viewers like you
-
-
-<!--
-AWS setup -> IAM role to get data from S3 bucket
-EC2 Instance -> install boto3: pip install boto3
-                    b3c = boto3.resource('s3')
-                    bucket = b3c.Bucket('peterrussodsiproj')
-                    <In repo root directory>
-                    bucket.download_file('temp_data1.csv','temp_data1.csv')
-                install spacy: conda install -c conda-forge spacy
-                               python -m spacy download en
-                install pyflux: pip install pyflux
-
-ctrl+b release then d
+Thursday Presentations 4 minutes
+Monday dress rehersal
 
 *** END  *** -->

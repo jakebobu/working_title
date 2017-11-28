@@ -6,17 +6,25 @@
     <h1> Topics Containing '{{ token }}' </h1>
   </head>
   <body>
-    <div id="topic_list">
-      <form action="../../" name="c_token">
-        {% for pair in topic_list %}
-          <p> <button type="button" type="submit" value= {{ pair[0] }}> View </button>
-            word # {{ pair[1] }} in topic {{ pair[0] }}: {{ pair[2] }}...
-          </p>
-        {% endfor %}
-      </form>
-    </div>
-    <div id="navigation">
-
+    {% if topic_list|length == 0 %}
+      <p> No topics for this token </p>
+    {% else %}
+      <div id="topic_list">
+        <form action="/">
+          {% for pair in topic_list %}
+            <p> <button name="topic_select" type="submit" value="{{ pair[0] }}"> View </button>
+              word # {{ pair[1] }} in {{ pair[0] }}: {{ pair[2] }}...
+            </p>
+          {% endfor %}
+        </form>
+      </div>
+    {% endif %}
+    <div id="navigation" style="display:inline-block; vertical-align: middle;">
+      <button onclick="location.href='/'">Home</button>
+      <!-- <button onclick="location.href='/SCRN/ID=Caldaia'">CALDAIA</button>
+      <button onclick="location.href='/SCRN/ID=Filtraggio'">FILTRAGGIO</button>
+      <button onclick="location.href='/SCRN/ID=UTA'">U.T.A.</button>
+      <button onclick="location.href='/SCRN/ID=Trending'">GRAFICI</button> -->
     </div>
   </body>
   <footer>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+  <head>
+    <title>Articles Related to Topic</title>
+    <h1> News Articles related to a Topic </h1>
+  </head>
+  <body>
+    <div id="article_table">
+      <table style="width:100%">
+       <tr>
+         {% for c in columns %}
+          <th>c</th>
+         {% endfor %}
+       </tr>
+       {% for article in article_list %}
+        <tr>
+          <td><a href ="{{ article['web_url'] }}">Webpage</a></td>
+          <td>{{ article['headline'] }}</td>
+          <td>{{ article['pub_date'] }}</td>
+        </tr>
+       {% endfor %}
+      </table>
+    </div>
+    <div id="navigation" style="display:inline-block; vertical-align: middle;">
+      <button onclick="location.href='/'">Home</button>
+    </div>
+  </body>
+  <footer>
+    <h3> Website by Peter Russo </h3>
+    <a href="https://github.com/s0eger/working_title"> github repo </a>
+  </footer>
+</html>

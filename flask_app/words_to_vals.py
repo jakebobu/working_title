@@ -202,6 +202,14 @@ class NMF_Time():
         self.times = np.array(time_periods)
         print('Time Counts is Complete')
 
+    def create_article_topic_relation(self, df, threshold = 0.1):
+        article_relates = dict()
+        for i in range(self.W.shape[1]):
+            article_relates[i] = np.argwhere(W[:,i] >= threshold)[:,0]
+        # for i in range(self.W.shape[0]):
+        #     article_relates[df.headline.values[i]] = np.arange(self.W.shape[1])[self.W[i,:] >= threshold]
+        self.article_relates = article_relates
+
     def comprehensive_time_count_self (self):#, df, delta = dt.timedelta(days=1)):
         """ Generates plots to look at the affect of the threshold on the counting of articles for a topic.
 
@@ -335,3 +343,4 @@ class NMF_Time():
         self.counts = cw.all_counts.T
         self.topic_dc = cw.all_dc
         self.times = cw.times
+        self.article_relates = cw.article_relates

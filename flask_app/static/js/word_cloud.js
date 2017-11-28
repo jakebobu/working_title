@@ -7,7 +7,7 @@ $(document).ready(function () {
        // we have to specify width and height of the word_cloud chart
        $('#word_cloud').jQCloud(words_data, {
            width: 800,
-           height: 600
+           height: 300
        });
    }});
 });
