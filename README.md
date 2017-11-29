@@ -105,19 +105,19 @@ Ran from AWS utilizing flask through python.
 
 #### Word Clouds of the top words per topic.
 Given a provided topic, presents the words that make up that topic sized by the relative importance of word in that topic.
-<!-- ![Flask App Time Trend](readme_images/word_cloud.png "Example Word Cloud from Flask Web Application") -->
+![Flask App Time Trend](readme_images/word_cloud.png "Example Word Cloud from Flask Web Application")
 
 #### Plots across time
 Shows a recent time trend of article counts from a provided topic, including a prediction on future behavior.
-<!-- ![Flask App Word Cloud](readme_images/time_trend.png "Example Time Trend from Flask Web Application") -->
+![Flask App Word Cloud](readme_images/time_trend.png "Example Time Trend from Flask Web Application")
 
 #### Articles from Specific Topic
 Given a provided topic, lists the articles that constitute that topic.
-<!-- ![Flask App Word Cloud](readme_images/article_listing.png "Example Listing of Articles related to a Topic from Flask Web Application") -->
+![Flask App Word Cloud](readme_images/article_listing.png "Example Listing of Articles related to a Topic from Flask Web Application")
 
 #### Topics from Specific Word
 Given a provided token (word), lists the topics that contain the token.
-<!-- ![Flask App Word Cloud](readme_images/topic_listing.png "Example Listing of Topics related to a Word from Flask Web Application") -->
+![Flask App Word Cloud](readme_images/topic_listing.png "Example Listing of Topics related to a Word from Flask Web Application")
 
 ### AWS EC2 Instance
 * Allows flask web application to be continuously ran and accessed from any location
