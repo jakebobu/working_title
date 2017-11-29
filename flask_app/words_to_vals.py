@@ -45,7 +45,12 @@ from sklearn.decomposition import NMF
 from string import punctuation
 import matplotlib.pyplot as plt
 import pyflux as pf
-from work_with_counts import Count_Worker
+
+import os
+if os.path.dirname(os.path.abspath('words_to_vals.py')) == '/home/peter/Documents/working_title/flask_app':
+    from work_with_counts import Count_Worker
+else:
+    from flask_app.work_with_counts import Count_Worker
 
 
 nlp = spacy.load('en')
@@ -324,4 +329,3 @@ class NMF_Time():
         self.W = cw.W
         self.top_n_words = len(cw.dc[0].keys())
         self.topic_threshold = cw.topic_threshold
-        

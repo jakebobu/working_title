@@ -1,13 +1,24 @@
 import pickle
 import pandas as pd
 import numpy as np
-from words_to_vals import NMF_Time, _tokenize
-from work_with_counts import Count_Worker
+from flask_app.words_to_vals import NMF_Time, _tokenize
+from flask_app.work_with_counts import Count_Worker
 import datetime as dt
 from sklearn.metrics.pairwise import pairwise_distances
 import matplotlib.pyplot as plt
 
 def generate_model_data_from_articles ():
+    """ Generates a model and saves it (currently used for testing on model, not for finalized model)
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None, but saves the model as a pickle file
+    """
+
     df = pd.read_csv('temp_data1.csv',index_col=0)
     df = df[df['news_source'] == 'NYT']
     testy = NMF_Time()
@@ -16,6 +27,17 @@ def generate_model_data_from_articles ():
     testy.save_model()
 
 def feature_variance_cutoff(plot_results=False):
+    """ Trains model with varying number of features for NMF and looks at reconstruction error, within topic similarity, and across topic similarity
+
+    Parameters
+    ----------
+    plot_results: boolean to where or not you want to see plot of results
+
+    Returns
+    -------
+    None, but saves these values to 'nmf_trends.csv' for further access
+    """
+
     df = pd.read_csv('temp_data1.csv',index_col=0)
     df = df[df['news_source'] == 'NYT']
     testy = NMF_Time(verbose=False)
@@ -66,8 +88,7 @@ def feature_variance_cutoff(plot_results=False):
     df.to_csv('nmf_trends.csv')
 
 if __name__ == '__main__':
-    errors, in_err, out_err, n_feats = feature_variance_things()
-    print(errors)
-
+    # errors, in_err, out_err, n_feats = feature_variance_things()
+    # print(errors)
     # testy = generate_model_data_from_articles()
     # obj = pull_up_data()

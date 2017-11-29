@@ -7,6 +7,17 @@ import pandas as pd
 import datetime as dt
 
 def minimize_error(weights):
+    """ Minimization function, the y values are stored in the main block
+
+    Parameters
+    ----------
+    weights: a tuple of current alpha, beta, gamma values
+
+    Returns
+    -------
+    error: Sum of squared errors value looking to be minimized
+    """
+
     periods_ahead = 6
     m = 7
     alpha = weights[0]
@@ -39,6 +50,17 @@ def minimize_error(weights):
     return error
 
 def minimize_start():
+    """ Utilizes scipy optimization to mimimize the Holt-Winter hyper-parameters
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    The response object of the scipy optimization
+    """
+
     with open('app_model/output_data.pkl','rb') as f:
         cw = pickle.load(f)
     w0 = np.array([0.2,0.2,0.2])
@@ -48,6 +70,18 @@ def minimize_start():
     # return differential_evolution(minimize_error,bounds=[r,r,r])
 
 def generate_model(data_location, save_model=True):
+    """ Generates a model for the flask app to utilize as data source
+
+    Parameters
+    ----------
+    data_location: the relative location of the data to generate the model
+    save_model: if you want to save this generated model for the flask app to use
+
+    Returns
+    -------
+    nmf_model: the generated model
+    """
+
     nmf_model = NMF_Time(top_n_words=25, verbose=True)
     df = pd.read_csv(data_location, index_col=0)
     df = df[df['news_source'] == 'NYT'] # Currently due to not enough from other sources
@@ -58,7 +92,8 @@ def generate_model(data_location, save_model=True):
     return nmf_model
 
 def load_prior_model():
+    ''' Loads and returns the currently saved pickled model found under '/app_model' '''
     return NMF_Time(load_model=True)
 
 if __name__ == '__main__':
-    generate_model('../temp_data1.csv')
+    obj = generate_model('../temp_data1.csv',save_model=False)

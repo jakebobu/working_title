@@ -372,7 +372,19 @@ def tot_newsy (sources):
     # df_tot.drop_duplicates(subset=['headline'], inplace=True) WTF???????
     df_tot.to_csv('temp_data1.csv')
 
-def foxy_news(start_date = dt.date(2017,8,1),end_date = dt.date.today()):
+def fox_news_web_scrape(start_date = dt.date(2017,8,1),end_date = dt.date.today()):
+    """ Utilizies Fox News Advance Article Search to grab all articles across a period
+
+    Parameters
+    ----------
+    start_date: beginning date of collection period
+    end_date: end date of collection period
+
+    Returns
+    -------
+    df: pandas dataframe for the collected articles (no content yet)
+    """
+
     link = 'http://www.foxnews.com/search-results/search?q=a&ss=fn&min_date={0}&max_date={1}&start=0'.format(start_date, end_date)
     r = requests.get(link)
     html = r.content
@@ -402,7 +414,20 @@ def foxy_news(start_date = dt.date(2017,8,1),end_date = dt.date.today()):
     df['section_name']=sections
     return df
 
-def foxy_table(links,titles,sections):
+def fox_news_to_table(links,titles,sections):
+    """ Given work done by fox_news_web_scrape, grabs the article content for those articles and adds that information to the current storage location
+
+    Parameters
+    ----------
+    links: website urls for articles
+    titles: the headlines of those articles
+    sections: the news section of those articles
+
+    Returns
+    -------
+    None
+    """
+
     save_rate = 100
     df_tot = pd.read_csv('temp_data1.csv',index_col=0)
     temp_cols = ['_id', 'content', 'headline', 'news_source', 'pub_date', 'section_name', 'web_url', 'word_count']
@@ -423,7 +448,7 @@ def foxy_table(links,titles,sections):
 
 
 def clean_up_df(df):
-    ''' Given a dataframe of articles, drops articles with no contents, drops duplcate articles, and converts pub_data to a datetime object '''
+    ''' Given a dataframe of articles, drops articles with no contents, drops duplcate articles, and converts pub_date to a datetime object '''
     df.dropna(subset=['content'], axis=0, inplace=True)
     df.drop_duplicates(subset='headline', inplace=True)
     df['pub_date'] = pd.to_datetime(df['pub_date'])

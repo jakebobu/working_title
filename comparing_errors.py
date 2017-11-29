@@ -42,7 +42,7 @@ def triple_exp_me(data, alpha=0.5, beta=0.5, gamma=0.5):
             c[:,i]=gamma*(data[:,i]-s[:,i])+(1-gamma)*c[:,i-L]
     return c + s + b
 
-
+''' The following three functions are provided by source above '''
 def initial_seasonal_components(series, slen):
     seasonals = {}
     season_averages = []
