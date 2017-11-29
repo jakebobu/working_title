@@ -1,20 +1,19 @@
 # Time Series Trending of News Articles Organized through Latent Topics
 Galvanize DSI Capstone
-<!-- TODO: link to relevant scripts for their respective sections here -->
-<!-- Requires final model to be done and scripts to be reorganized into logical structure -->
 
 ## Table Of Contents
 
 * [Concept](#concept)
 * [Process](#process)
 * [Data](#data)
+  * [Web Scrounging and Scraping](#web-scrounging-and-scraping)
   * [Data Storage](#data-storage)
   * [Data Manipulation](#data-manipulation)
 * [Modeling](#modeling)
   * [Hyper-Parameter Selection](#hyper-parameter-selection)
-  * [Predictive Algorithms](#numerical-predictive-acceleration-algorithms)
-* [Web App](#web-app)
-  * [Visualization](#visualization)
+  * [Predictive Algorithms](#numerical-predictive-forecasting-algorithm)
+* [Web App](#web-application)
+  * [Functionality](#functionality)
   * [AWS EC2 Instance](#aws-ec2-instance)
 * [Future Goals](#future-goals)
   * [Live Data](#live-data)
@@ -23,106 +22,96 @@ Galvanize DSI Capstone
 
 ## Concept
 
-Predictive capability to grab future trends based on time series analysis of topics. Using natural language processing and Non-negative Matrix Factorization (NMF) to pull out key/topic words from news articles, this model looks to see latent topics that have rising rates of publication. These predicted values will be determined by first and second order rates of growth in topics.
+The purpose of this project is to generate a model with the predictive capability to grab future trends based on time series analysis of topics. Using natural language processing and Non-negative Matrix Factorization (NMF) to pull out key/topic words from news articles, this model looks to see latent topics that have rising rates of publication. These trends and topics will then be displayed through a web application.
 
 ## Process
 
-### Workflow Visualization <Block Diagram>
+### Workflow Visualization
 
-  ![Flow Chart of Process](readme_images/workflow.png)
+  ![Flow Chart of Process](readme_images/workflow.png "Flow Chart of the workflow")
 
 ## Data
 
-News Articles from all topics/sections over a period of at the time previous 5 months (7/1/2017 - 11/28/2017)
+News Articles from all topics/sections over a period of at the time previous 5 months (July-2017 to November-2017)
 
-### Detail sources, what news sources needed what, show how to reproduce data collection
-* Listing of articles were either provided through an API interface (NYT API website, NEWS API website), or through web scraping news sources' article archive search
-* Requests library along with BeautifulSoup for web scraping and extracting the important elements of the articles as given below
+### Web Scrounging and Scraping
+
+Listing of articles were either provided through an API interface (NYT API website, NEWS API website), or through web scraping news sources' article archive search. Requests library from python along with BeautifulSoup allow for web scraping and extracting the important elements of the articles. This is ran through scrape_web.py.
 
 ### Data Storage
 
-* Collective data is stored on S3 in following fashion:
-
-| # | _id                  | headline              | pub_date   | section_name | web_url | word_count | content     | news_source |
-| - | -------------------- | --------------------- | :--------: | ------------ |:-------:| :--------: | ----------- | ----------- |
-| 0 | 09ig34w09ibs90iw34sb | Top 10 Reasons To...  | 0000-00-00 | NA           | https:  | 512        | This is a   | NYT         |
-| 1 | tu8936nmvb09u8mtv4mu | Newsy News News...    | 0000-00-00 | Popular      | hhtps:  | 256        | story about | Wash Post   |
-| 2 | tvs3um89psv48um9pet3 | Breaking News Here... | 0000-00-00 | Sports       | https:  | 123        | how my life | ESPN        |
-
-* id : unique identifier provided by source if one exists
-* headline: provided article headline
-* pub_date: publication date
-* section_name: news section of article if provided/relevant to news sources
-* web_url: url of news article
-* word_count: count of words in article (used to eliminate extremely short articles)
-* news_source: source of news article
+After data is collected, it is stored in a .csv on AWS S3. The following things are included about the articles: a unique identifier provided by source if one exists, the article headline, the article publication date, the section the article is found under (e.g. Arts, Politics, Sports), the URL to that article, the count of words in an article (used to eliminate extremely short articles), and the name of the news source. Implementation on pushing and pulling of data on S3 is done in post_to_s3.py.
 
 
 ### Data Manipulation
 
-First goal is to convert article text into a list of words (tokenizing) and group similar words, especially synonyms, into a singular root word (lemmatizing). I utilized spaCy to accomplish this task. Additionally, generic article content were added to the list of stop words to exclude them from final list of words. This includes things like author bylines, contact us lines, and numbered things like publication time stamps that don't add any substance to the content of an article. Lastly, tokens containing only punctuation or numbers were removed from the list for the similar reason.
+The first goal is to convert article text into a list of words (tokenizing) and group similar words, especially synonyms, into a singular root word (lemmatizing). The spaCy library accomplishes this task. Additionally, tokens containing only punctuation or numbers are removed from the list as they do not add to the specific content of an article. Once an article text is converted to its list of words, it is vectorized through sklearn's TfidfVectorizer in order to emphasize the unique words in each article. This vectorized corpus is then ran through sklearn's NMF model to generate latent topics. These steps are performed by the class NMF_Time that is found /flask_app/words_to_vals.py.
 
-  ![Article Text to Tokens](readme_images/text_to_tokens.png)
+  ![Article Text to Tokens](readme_images/text_to_tokens.png "Converting article text to list of tokens")
+
+  <br>
 
 ## Modeling
 
 ### Hyper-parameter Selection
 
-Topic selection is significant to the outcome of the predictive modeling. Varying from a small selection of topics at 10, to a comprehensive selection at 1000 topics, a final topic size of 500 was selected. This was decided upon comparing the similarity between topics, similarity between articles in a topic, and the reconstruction error for the Non-Negative Matrix Factorization.
+Deciding upon the number of topics to have is significant to the outcome of the predictive modeling. Too few topics means they are too generalized, and too many topics means that there would not be enough articles in each topic to conduct time series analysis on. Selection of number of topics is done by comparing the cosine similarity between topics, cosine similarity between articles in a topic, and the reconstruction error for the Non-Negative Matrix Factorization. Varying from 10 to 1000 number of topics, a final number of 500 topics was selected. Above this point, there was minimal improvement upon similarities and error.
 
-Threshold selection of minimum similarity between article and content determines how many articles fall within each topic. Comparing the article selections provided by ranging threshold shows an optimal threshold of ~0.05. Optimal was specified by being small enough to have the greatest percentage of articles in related to a  topic while not too small and having articles related to multiple topics.
+A threshold of a minimum cosine similarity between articles and topics determines at what point an article becomes related to, or part of, a topic based on that similarity. An optimal threshold is one that is small enough to have the greatest percentage of articles have a similarity to a topic greater than that threshold while not too small and having articles related to too many topics. Comparing a range of thresholds shows an optimal threshold of ~0.05.
 
 ![Threshold Selection](readme_images/article_threshold.png "Threshold Selection for Article to Topic Similarity")
 
 <br>
 
 
-### Numerical Predictive Acceleration Algorithms <Rename>
-
+### Numerical Predictive Forecasting Algorithm
+Provided a listing of articles and their similarity to topics, the articles are separated into related topics and by date and time of publication. This is done as a following step to above in the class NMF_Time found /flask_app/words_to_vals.py. These counts then need to be smoothed and ran through a preditive model to forecast future counts.
 
 #### Holt-Winter Model (seasonality) exponentially weighted average
-  * Triple exponential forecasting to predict future trends
-  * Seasonality is noticed for topics on a weekly (7-day) cycle
-  * Incorporates three Hyper-parameters:
-    * Alpha - the importance of the prior values
-    * Beta - the importance of the trending behavior (rate of change)
-    * Gamma - the relative importance of seasonality
+This model utilizes triple exponential forecasting to predict future trends. The reason for this model's selection is due to the seasonality that is noticed for topics on a weekly (7-day) cycle. This is particularly true for topics containing articles published on the weekend. Holt-Winter Model incorporates three hyper-parameters:
+  * Alpha - the importance of the prior values
+  * Beta - the importance of the trending behavior (rate of change)
+  * Gamma - the importance of seasonality
+
+The optimal values for these parameters are found using scipy's optimize library. The work for this step is seen under flask_app/find_best_hyperparams.py. The implementation of this model is found in the Count_Worker clas in flask_app/work.py.
 
 <br>
+
 ![Double Exponential Hyper-parameters](readme_images/double_exp_param_search.png "Optimal Double Exponential Hyper-Parameters of alpha=0.37, beta=1.0")
 
 Sum of Squared Errors across a subset of the article corpus to show ranges of errors across ranging Hyper-Parameters (Black point indicates location of minimum error)
 <br>
 
-## Web App
-Ran from AWS utilizing flask through python.
+## Web Application
+Ran from AWS utilizing flask through python. See flask_app/app.py for its code.
+Visit Website Here:
+(If down, contact me for assistance)
+<!-- ![Flask App Index Page](readme_images/index_page.png "Landing Page of Flask Web Application") -->
 
-![Flask App Index Page](readme_images/index_page.png "Landing Page of Flask Web Application")
 
-
-### Visualization
-
+### Functionality
+Current functionality of the web application includes the following:
 
 #### Word Clouds of the top words per topic.
-Given a provided topic, presents the words that make up that topic sized by the relative importance of word in that topic.
-![Flask App Time Trend](readme_images/word_cloud.png "Example Word Cloud from Flask Web Application")
+Given a provided topic, presents the words that make up that topic sized by the relative importance of each word in that topic.
+<!-- ![Flask App Time Trend](readme_images/word_cloud.png "Example Word Cloud from Flask Web Application") -->
 
 #### Plots across time
 Shows a recent time trend of article counts from a provided topic, including a prediction on future behavior.
-![Flask App Word Cloud](readme_images/time_trend.png "Example Time Trend from Flask Web Application")
+<!-- ![Flask App Word Cloud](readme_images/time_trend.png "Example Time Trend from Flask Web Application") -->
 
 #### Articles from Specific Topic
 Given a provided topic, lists the articles that constitute that topic.
-![Flask App Word Cloud](readme_images/article_listing.png "Example Listing of Articles related to a Topic from Flask Web Application")
+<!-- ![Flask App Word Cloud](readme_images/article_listing.png "Example Listing of Articles related to a Topic from Flask Web Application") -->
 
 #### Topics from Specific Word
-Given a provided token (word), lists the topics that contain the token.
-![Flask App Word Cloud](readme_images/topic_listing.png "Example Listing of Topics related to a Word from Flask Web Application")
+Given a provided token (word), lists the topics that contain that token.
+<!-- ![Flask App Word Cloud](readme_images/topic_listing.png "Example Listing of Topics related to a Word from Flask Web Application") -->
 
 ### AWS EC2 Instance
 * Allows flask web application to be continuously ran and accessed from any location
 * General instructions to setup instance (depends on how user wants to provide data):
-  * AWS setup -> IAM role to get data from S3 bucket if that is source of articles
+  * AWS setup -> Specify IAM role to get data from S3 bucket if that is source of articles
   * EC2 Instance requires standard python/anaconda suite of libraries, but additionally needs boto3 if S3 utilized, spaCy for natural language processing, and flask to run web application
 
 ## Future Goals

@@ -12,6 +12,9 @@ from mpld3 import plugins
 
 app = Flask(__name__)
 
+#TODO: grab images to replace template images
+#TODO: center forms on index page
+
 # Want to say that topic 0 is cw.trending_order[0]
 @app.route('/')
 def index():
