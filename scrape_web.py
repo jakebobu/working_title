@@ -427,10 +427,8 @@ def clean_up_df(df):
     df.dropna(subset=['content'], axis=0, inplace=True)
     df.drop_duplicates(subset='headline', inplace=True)
     df['pub_date'] = pd.to_datetime(df['pub_date'])
-    df.sort('pub_date')
     df.to_csv('temp_data1.csv')
 
- return ' '.join(lems)
 
 if __name__ == '__main__':
     sources = ['the-washington-post','bbc-news','cnn','breitbart-news']

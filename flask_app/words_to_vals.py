@@ -117,30 +117,8 @@ class NMF_Time():
         if kwargs == None:
             kwargs = dict()
         self._fit_vectorizer(content=content,tok=tok,**kwargs)
-        self._fit_factorizer(kwargs)
+        self._fit_factorizer(**kwargs)
         self._generate_topics()
-        # t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = tok, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
-        # nmf = NMF(n_components = kwargs.get('n_components', 10), init = kwargs.get('init', 'nndsvd'), solver = kwargs.get('solver', 'cd'), random_state = 2, alpha = kwargs.get('alpha', 0), l1_ratio = kwargs.get('l1_ratio', 0), shuffle = True, verbose = self.verbose)
-        # print('Starting Vectorizer')
-        # t_mat = t_vect.fit_transform(content)
-        # print('Tokenizing completed')
-        # print('Starting NMF')
-        # self.W = nmf.fit_transform(t_mat)
-        # print('Topics Generated')
-        # self.t_vect = t_vect
-        # self.nmf = nmf
-        # H = nmf.components_
-        # vocab = { v: k for k, v in t_vect.vocabulary_.items()}
-        # top_words = []
-        # temp_dict = []
-        # ordering = H.argsort(axis=1)[:,:-self.top_n_words-1:-1]
-        # for i in range(H.shape[0]):
-        #     tdict = {vocab[ordering[i,j]] : H[i, ordering[i,j]] for j in range(self.top_n_words)}
-        #     temp_dict.append(tdict)
-        #     tp = [vocab[ordering[i,j]] for j in range(self.top_n_words)]
-        #     top_words.append(tp)
-        # self.topics = np.array(top_words)
-        # self.topic_dc = np.array(temp_dict)
 
     def _fit_vectorizer (self, content, tok, **kwargs):
         self.t_vect = TfidfVectorizer(stop_words = 'english', tokenizer = tok, max_df = kwargs.get('max_df', 1.0), min_df = kwargs.get('min_df', 0.0), max_features = kwargs.get('max_features', None))
@@ -200,18 +178,11 @@ class NMF_Time():
         self.counts = np.array(topic_counts)
         self.total_counts = np.array(period_counts)
         self.times = np.array(time_periods)
+        self.topic_threshold = threshold
         print('Time Counts is Complete')
 
-    def create_article_topic_relation(self, df, threshold = 0.1):
-        article_relates = dict()
-        for i in range(self.W.shape[1]):
-            article_relates[i] = np.argwhere(W[:,i] >= threshold)[:,0]
-        # for i in range(self.W.shape[0]):
-        #     article_relates[df.headline.values[i]] = np.arange(self.W.shape[1])[self.W[i,:] >= threshold]
-        self.article_relates = article_relates
-
-    def comprehensive_time_count_self (self):#, df, delta = dt.timedelta(days=1)):
-        """ Generates plots to look at the affect of the threshold on the counting of articles for a topic.
+    def comprehensive_time_count_self (self):
+        """ Generates plots to look at the counts of articles to topics based on thresholds.
 
         Parameters
         ----------
@@ -219,6 +190,7 @@ class NMF_Time():
 
         Returns
         -------
+        None
         A figure containing plots of article counts against thresholds
         - Plot of % of articles in corpus that meet the threshold of a topic
         - Plot of average number of topics per article
@@ -265,6 +237,7 @@ class NMF_Time():
 
         Returns
         -------
+        None, but assigns to self:
         topic_counts : counts of articles that are pertaining to a topic, across time
         total_counts : total number of articles in that time period
         time_periods : the periods of time relating to topic_counts
@@ -276,30 +249,33 @@ class NMF_Time():
         elif self.t_vect == None or self.nmf == None:
             content = df['content'].values
             generate_topics(content)
-        df['pub_date'] = pd.to_datetime(df['pub_date'])
-        start_time = df['pub_date'].min()
-        end_time = start_time + delta
-        ending_point = df['pub_date'].max()
-        topic_counts = []
-        period_counts = []
-        time_periods = []
-        print("Starting time analysis")
-        # May instead utilize spacy similarity to determine similarity between article and topics
-        while start_time <= ending_point:
-            print('Time period left (days): {}'.format((ending_point-start_time).days))
-            df_dt = df[(df['pub_date'] < end_time) & (df['pub_date'] >= start_time)]
-            dt_content = df_dt['content'].values
-            topic_vals = self.nmf.transform(self.t_vect.transform(dt_content))
-            topic_pick = np.sum(1*(topic_vals >= threshold),axis=0)
-            topic_counts.append(topic_pick)
-            period_counts.append(dt_content.shape[0])
-            time_periods.append(start_time)
-            start_time = end_time
-            end_time = start_time + delta
-        self.counts = np.array(topic_counts)
-        self.total_counts = period_counts
-        self.times = np.array(time_periods)
-        print('Time Counts is Complete')
+        t_mat = self.t_vect.transform(df['content'].values)
+        self.W = self.nmf.transform(t_mat)
+        self.perform_time_counting_self(df, delta, threshold)
+        # df['pub_date'] = pd.to_datetime(df['pub_date'])
+        # start_time = df['pub_date'].min()
+        # end_time = start_time + delta
+        # ending_point = df['pub_date'].max()
+        # topic_counts = []
+        # period_counts = []
+        # time_periods = []
+        # print("Starting time analysis")
+        # # May instead utilize spacy similarity to determine similarity between article and topics
+        # while start_time <= ending_point:
+        #     print('Time period left (days): {}'.format((ending_point-start_time).days))
+        #     df_dt = df[(df['pub_date'] < end_time) & (df['pub_date'] >= start_time)]
+        #     dt_content = df_dt['content'].values
+        #     topic_vals = self.nmf.transform(self.t_vect.transform(dt_content))
+        #     topic_pick = np.sum(1*(topic_vals >= threshold),axis=0)
+        #     topic_counts.append(topic_pick)
+        #     period_counts.append(dt_content.shape[0])
+        #     time_periods.append(start_time)
+        #     start_time = end_time
+        #     end_time = start_time + delta
+        # self.counts = np.array(topic_counts)
+        # self.total_counts = period_counts
+        # self.times = np.array(time_periods)
+        # print('Time Counts is Complete')
 
     def save_model(self):
         """ Pickle dumps the object into relevant files under directory 'model/'. Requires fitting of model and time counting to be done.
@@ -314,6 +290,7 @@ class NMF_Time():
         """
 
         cw = Count_Worker(self)
+        cw.setup_work()
         with open('app_model/output_data.pkl', 'wb') as od:
             pickle.dump(cw, od)
         with open('app_model/vectorizer.pkl', 'wb') as vc:
@@ -341,6 +318,10 @@ class NMF_Time():
             self.nmf = pickle.load(fc)
         self.topics = cw.all_topics
         self.counts = cw.all_counts.T
+        self.total_counts = cw.total_counts
         self.topic_dc = cw.all_dc
         self.times = cw.times
-        self.article_relates = cw.article_relates
+        self.W = cw.W
+        self.top_n_words = len(cw.dc[0].keys())
+        self.topic_threshold = cw.topic_threshold
+        

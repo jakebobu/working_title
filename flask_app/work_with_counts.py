@@ -7,12 +7,9 @@ from matplotlib.ticker import LinearLocator, FormatStrFormatter
 import pandas as pd
 from itertools import product
 
-# TODO: remove all topics when there counts given the threshold < 10
-
 class Count_Worker(object):
     """docstring for Count_Worker."""
     def __init__(self, obj):
-        #TODO: determine how many periods ahead I want to predict (thinking 6 periods (1 day))
         self.all_counts = obj.counts.T
         self.topic_counts = self.all_counts.copy()
         self.total_counts = obj.total_counts
@@ -21,24 +18,45 @@ class Count_Worker(object):
         self.all_dc = obj.topic_dc
         self.dc = self.all_dc.copy()
         self.times = obj.times
-        self.article_relates = obj.article_relates
-        # if type(obj.W) == np.array:
-        #     self.W = obj.W
+        self.W = obj.W
         self.H = obj.nmf.components_
         self.web_index = None
+        self.topic_threshold = obj.topic_threshold
 
     def setup_work(self):
         self.drop_useless_topics()
+        self.create_article_topic_relation()
         self.calc_accel()
         self.double_exp_smoothing()
         self.data_smoothing()
+        self.predict_all()
+        self.find_trending_topics()
 
     def drop_useless_topics (self, useful_count = 3):
         tsum = np.sum(self.all_counts,axis=1)
         self.topic_counts = self.all_counts[tsum >= useful_count,:]
+        self.W_a = self.W[:,tsum >= useful_count]
         self.topics = self.all_topics[tsum >= useful_count,:]
         self.topics = {i : self.topics[i,:] for i in range(self.topics.shape[0])}
         self.dc = self.all_dc[tsum >= useful_count]
+
+    def create_article_topic_relation(self):
+        """ Creates a dictionary where the keys are each topic and the values is a list of articles by their indece that relate to that topic
+
+        Parameters
+        ----------
+        threshold: the threshold utilized to cut off the similarity between article and topic
+
+        Returns
+        -------
+        None
+        Assigns self.article_relates as the dictionary between topics and articles
+        """
+
+        article_relates = dict()
+        for i in range(self.W_a.shape[1]):
+            article_relates[i] = np.argwhere(self.W_a[:,i] >= self.topic_threshold)[:,0]
+        self.article_relates = article_relates
 
     def calc_accel(self):
         """ Using the calculated counts of articles in the topics, finds the velocity and acceleration of those counts across all topics
@@ -446,7 +464,7 @@ class Count_Worker(object):
         predicted_values[:,0]= self.smooth_data[:,-1]
         for i in range(predicted_values.shape[0]):
             predicted_values[i,1:]=self.triple_exp_predict(topic_index=i, periods_ahead=periods_ahead)
-        self.predicted_values = predicted_values
+        self.predicted_values = np.clip(predicted_values,a_min=0.0,a_max=None)
         delta_time = self.times[1] - self.times[0]
         self.predicted_times = np.array([self.times[-1] + delta_time*i for i in range(periods_ahead + 1)])
 

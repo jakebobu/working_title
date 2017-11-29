@@ -1,10 +1,9 @@
-
 import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+''' Utilized code provided by https://grisha.org/blog/2016/01/29/triple-exponential-smoothing-forecasting/ to compare with my implementation of triple exp smoothing'''
 
 
 def triple_exp_me(data, alpha=0.5, beta=0.5, gamma=0.5):
@@ -13,12 +12,12 @@ def triple_exp_me(data, alpha=0.5, beta=0.5, gamma=0.5):
 
     Parameters
     ----------
+    data: data to smooth
     alpha,beta,gamma: the specified values of these hyper-parameters for the triple exponential
-    periods_ahead: number of periods ahead to predict
 
     Returns
     -------
-    error: the RMSE from the provided parameters
+    predicted trend across time
     """
 
     s = data.copy()

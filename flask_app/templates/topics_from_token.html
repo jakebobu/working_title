@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/static/css/main.css" />
   </head>
-	<body class="subpage">
+  <body class="subpage">
+
     <!-- Header -->
     <header id="header">
       <div class="inner">
@@ -22,30 +23,24 @@
     <section id="main" class="wrapper">
       <div class="inner">
         <header class="align-center">
-          <h2>Article Listing</h2>
-          <p>List of articles related to {{ topic }}</p>
+          <h2>Topics Listing for '{{ token }}'</h2>
+          <p>List of topics that contain the word <strong>{{ token }}</strong></p>
         </header>
-        <div class="table-wrapper">
-          <table>
-            <thead>
-             <tr>
-               {% for c in columns %}
-                <th>{{c}}</th>
-               {% endfor %}
-             </tr>
-            </thead>
-            <tbody>
-             {% for article in article_list %}
-              <tr>
-                <td><a href ={{ article['web_url'] }}>Visit</a></td>
-                <td>{{ article['headline'] }}</td>
-                <td>{{ article['pub_date'] }}</td>
-              </tr>
-             {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <button onclick="location.href='/topic_counts/?topic_select={{ topic }}'">Back to Trend of {{ topic }}</button>
+        {% if topic_list|length == 0 %}
+          <p> No topics for this token </p>
+        {% else %}
+          <form action="/topic_counts/">
+            <div class="row">
+              <ul class="alt">
+                {% for pair in topic_list %}
+                  <li> <button name="topic_select" type="submit" value="{{ pair[0] }}"> View </button>
+                    Word # {{ pair[1] }} in {{ pair[0] }}: {{ pair[2] }}...
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </form>
+        {% endif %}
       </div>
     </section>
 
@@ -62,10 +57,10 @@
     </footer>
 
     <!-- Scripts -->
-      <script src="/static/js/jquery.min.js"></script>
-      <script src="/static/js/skel.min.js"></script>
-      <script src="/static/js/util.js"></script>
-      <script src="/static/js/main.js"></script>
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/skel.min.js"></script>
+    <script src="/static/js/util.js"></script>
+    <script src="/static/js/main.js"></script>
 
   </body>
 </html>

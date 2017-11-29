@@ -15,7 +15,7 @@ def generate_model_data_from_articles ():
     testy.perform_time_counting_self(df, delta=dt.timedelta(hours=4), threshold=0.05)
     testy.save_model()
 
-def feature_variance_things():
+def feature_variance_cutoff(plot_results=False):
     df = pd.read_csv('temp_data1.csv',index_col=0)
     df = df[df['news_source'] == 'NYT']
     testy = NMF_Time(verbose=False)
@@ -43,18 +43,21 @@ def feature_variance_things():
         across_sim = pairwise_distances(H,metric='cosine')
         ind = np.tril_indices(H.shape[0],k=-1)
         out_err.append(np.mean(across_sim[ind]))
-    # plt.close('all')
-    # plt.subplot(3,1,1)
-    # plt.title('Reconstruction Errors')
-    # plt.plot(n_feats,errors)
-    # plt.subplot(3,1,2)
-    # plt.title('Average In Topic Similarity')
-    # plt.plot(n_feats,in_err)
-    # plt.subplot(3,1,3)
-    # plt.title('Average Across Topic Similarity')
-    # plt.plot(n_feats,out_err)
-    # plt.xlabel('Number of Features')
-    # plt.show()
+
+    if plot_results:
+        plt.close('all')
+        plt.subplot(3,1,1)
+        plt.title('Reconstruction Errors')
+        plt.plot(n_feats,errors)
+        plt.subplot(3,1,2)
+        plt.title('Average In Topic Similarity')
+        plt.plot(n_feats,in_err)
+        plt.subplot(3,1,3)
+        plt.title('Average Across Topic Similarity')
+        plt.plot(n_feats,out_err)
+        plt.xlabel('Number of Features')
+        plt.show()
+
     df = pd.DataFrame(columns=['n_feats','reconstruction_error','in_similarity','across_similiarity'])
     df['n_feats']= n_feats
     df['reconstruction_error']= errors

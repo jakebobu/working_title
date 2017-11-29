@@ -1,6 +1,5 @@
-# working_title
-dsi project markdown. [Witty pun here]
-
+# Time Series Trending of News Articles Organized through Latent Topics
+Galvanize DSI Capstone
 <!-- TODO: link to relevant scripts for their respective sections here -->
 <!-- Requires final model to be done and scripts to be reorganized into logical structure -->
 
@@ -19,29 +18,26 @@ dsi project markdown. [Witty pun here]
   * [AWS EC2 Instance](#aws-ec2-instance)
 * [Future Goals](#future-goals)
   * [Live Data](#live-data)
+  * [News Source Analysis](#news-source-analysis)
 * [Acknowledgments](#acknowledgments)
 
 ## Concept
 
-Predictive capability to grab future trends based on time series analysis of topics. Using natural language processing to pull out key/topic words from a news article, this app(?) will look to predict rising trends that have not reached the top of the pages in popularity. These predicted values will be determined by first and second order rates of growth in topics.
+Predictive capability to grab future trends based on time series analysis of topics. Using natural language processing and Non-negative Matrix Factorization (NMF) to pull out key/topic words from news articles, this model looks to see latent topics that have rising rates of publication. These predicted values will be determined by first and second order rates of growth in topics.
 
 ## Process
 
 ### Workflow Visualization <Block Diagram>
 
-  Data Collection (Web Scrapping) -> Data Storage (S3) -> Token/Lemmy(Spacy) -> Vectorizing/Topic Generating (sklearn) -> Time Series Analysis (Still comparing) -> Web App (Flask)
-
-  <!-- ![Name](images/<filename>.png)
-
-  <br /> -->
+  ![Flow Chart of Process](readme_images/workflow.png)
 
 ## Data
 
-News Articles from all topics/sections over a period of at the time previous 5 months (7/1/2017 - 11/15/2017) [End date will change]
+News Articles from all topics/sections over a period of at the time previous 5 months (7/1/2017 - 11/28/2017)
 
 ### Detail sources, what news sources needed what, show how to reproduce data collection
-* How I got keys, from whom (NYT API website, NEWS API website)
-* Requests library along with BeautifulSoup for web scraping
+* Listing of articles were either provided through an API interface (NYT API website, NEWS API website), or through web scraping news sources' article archive search
+* Requests library along with BeautifulSoup for web scraping and extracting the important elements of the articles as given below
 
 ### Data Storage
 
@@ -54,23 +50,25 @@ News Articles from all topics/sections over a period of at the time previous 5 m
 | 2 | tvs3um89psv48um9pet3 | Breaking News Here... | 0000-00-00 | Sports       | https:  | 123        | how my life | ESPN        |
 
 * id : unique identifier provided by source if one exists
+* headline: provided article headline
+* pub_date: publication date
+* section_name: news section of article if provided/relevant to news sources
+* web_url: url of news article
+* word_count: count of words in article (used to eliminate extremely short articles)
+* news_source: source of news article
 
-<include remainder of column descriptions here>
 
 ### Data Manipulation
 
-First goal is top convert article text into a list of words (tokenizing) and group similar words, especially synonyms, into a singular root word (lemmatizing). I utilized Spacy <url link> to accomplish this task. Additionally, generic article content were added to the list of stop words to exclude them from final list of words. This includes things like author bylines, contact us lines, and publication time stamps that don't add any substance to the content of an article. Lastly, tokens containing only punctuation or numbers were removed from the list for the similar reason.
+First goal is to convert article text into a list of words (tokenizing) and group similar words, especially synonyms, into a singular root word (lemmatizing). I utilized spaCy to accomplish this task. Additionally, generic article content were added to the list of stop words to exclude them from final list of words. This includes things like author bylines, contact us lines, and numbered things like publication time stamps that don't add any substance to the content of an article. Lastly, tokens containing only punctuation or numbers were removed from the list for the similar reason.
 
-<Show examples of this process, text to tokens>
+  ![Article Text to Tokens](readme_images/text_to_tokens.png)
 
 ## Modeling
 
 ### Hyper-parameter Selection
 
-Topic selection is significant to the outcome of the predictive modeling. Varying from a small selection of topics at 10, to a comprehensive selection at 1000 topics, a final topic size of [] was selected.
-
-<Show figure of Reconstruction error and similarities here>
-
+Topic selection is significant to the outcome of the predictive modeling. Varying from a small selection of topics at 10, to a comprehensive selection at 1000 topics, a final topic size of 500 was selected. This was decided upon comparing the similarity between topics, similarity between articles in a topic, and the reconstruction error for the Non-Negative Matrix Factorization.
 
 Threshold selection of minimum similarity between article and content determines how many articles fall within each topic. Comparing the article selections provided by ranging threshold shows an optimal threshold of ~0.05. Optimal was specified by being small enough to have the greatest percentage of articles in related to a  topic while not too small and having articles related to multiple topics.
 
@@ -81,78 +79,69 @@ Threshold selection of minimum similarity between article and content determines
 
 ### Numerical Predictive Acceleration Algorithms <Rename>
 
-Currently comparing three(ish) time series predictive techniques
-(Add descriptions of each in their sections)
 
-1) Autoregressive–moving-average model
-
-2) Holt-Winter Model (seasonality) exponentially weighted average
-  * Double vs Triple exponential
+#### Holt-Winter Model (seasonality) exponentially weighted average
+  * Triple exponential forecasting to predict future trends
+  * Seasonality is noticed for topics on a weekly (7-day) cycle
+  * Incorporates three Hyper-parameters:
+    * Alpha - the importance of the prior values
+    * Beta - the importance of the trending behavior (rate of change)
+    * Gamma - the relative importance of seasonality
 
 <br>
-
 ![Double Exponential Hyper-parameters](readme_images/double_exp_param_search.png "Optimal Double Exponential Hyper-Parameters of alpha=0.37, beta=1.0")
 
+Sum of Squared Errors across a subset of the article corpus to show ranges of errors across ranging Hyper-Parameters (Black point indicates location of minimum error)
 <br>
-
-3) pyflux.models
-  * ARIMAX
-  * beta-t-EGARCH
-  * GAS
-
-<Plot of differences in errors here>
-
 
 ## Web App
 Ran from AWS utilizing flask through python.
-URL found here (when up and running)
 
-<Image of index page here>
-
+![Flask App Index Page](readme_images/index_page.png "Landing Page of Flask Web Application")
 
 
 ### Visualization
-Given model, show probability of new trending topics
-* Plots across time
-
-<Images Here>
 
 
-* Word Clouds of the top [n] words per topic.
+#### Word Clouds of the top words per topic.
+Given a provided topic, presents the words that make up that topic sized by the relative importance of word in that topic.
+<!-- ![Flask App Time Trend](readme_images/word_cloud.png "Example Word Cloud from Flask Web Application") -->
 
+#### Plots across time
+Shows a recent time trend of article counts from a provided topic, including a prediction on future behavior.
+<!-- ![Flask App Word Cloud](readme_images/time_trend.png "Example Time Trend from Flask Web Application") -->
 
-<Images Here>
+#### Articles from Specific Topic
+Given a provided topic, lists the articles that constitute that topic.
+<!-- ![Flask App Word Cloud](readme_images/article_listing.png "Example Listing of Articles related to a Topic from Flask Web Application") -->
+
+#### Topics from Specific Word
+Given a provided token (word), lists the topics that contain the token.
+<!-- ![Flask App Word Cloud](readme_images/topic_listing.png "Example Listing of Topics related to a Word from Flask Web Application") -->
 
 ### AWS EC2 Instance
-* Throw specs of final utilized instance to run web app
+* Allows flask web application to be continuously ran and accessed from any location
 * General instructions to setup instance (depends on how user wants to provide data):
-        AWS setup -> IAM role to get data from S3 bucket
-        EC2 Instance -> install boto3: pip install boto3
-                      b3c = boto3.resource('s3')
-                      bucket = b3c.Bucket('peterrussodsiproj')
-                      <In repo root directory>
-                      bucket.download_file('temp_data1.csv','temp_data1.csv')
-                      install spacy: conda install -c conda-forge spacy
-                                 python -m spacy download en
-                      install pyflux: pip install pyflux
-
+  * AWS setup -> IAM role to get data from S3 bucket if that is source of articles
+  * EC2 Instance requires standard python/anaconda suite of libraries, but additionally needs boto3 if S3 utilized, spaCy for natural language processing, and flask to run web application
 
 ## Future Goals
 
 ### Live Data
-Streaming data from news sources (decide upon update interval daily/weekly, create script to do that)
-May refit on old predicted data, and predict on new data
-Using time series analysis to pull rising trends
-Currently thinking dashboard ran through flask unless I find a better alternative
+* Automated streaming data from news sources (decided upon update interval daily/weekly)
+* Automated retraining of model and topic generation
+
+
+### News Source Analysis
+* Provided a greater and more comprehensive corpus of news articles, train independently on news source to see differences amongst news sources
+* Similarity, train independently on provided news section (Sports, Arts, World) to see impact on time series analysis
 
 
 ## Acknowledgments
-Again grab url's for this section
-* spacy
-* pyflux
-* jQCloud
-* News Sources I utilized for making their articles available
-* And from viewers like you
+* spaCy - https://spaCy.io/
+* jQCloud - http://mistic100.github.io/jQCloud/index.html
+* Special thanks to NYT and NEWS API for providing easy access to article collections
+* Grisha Trubetskoy's Holt-Winter Blog for resource on implementation of said model - https://grisha.org/blog/2016/01/29/triple-exponential-smoothing-forecasting/
 
 
 
@@ -162,8 +151,8 @@ EC2 Instance -> install boto3: pip install boto3
                     bucket = b3c.Bucket('peterrussodsiproj')
                     <In repo root directory>
                     bucket.download_file('temp_data1.csv','temp_data1.csv')
-                install spacy: conda install -c conda-forge spacy
-                               python -m spacy download en
+                install spaCy: conda install -c conda-forge spaCy
+                               python -m spaCy download en
                 install pyflux: pip install pyflux
 
 ctrl+b release then d
@@ -194,6 +183,7 @@ ctrl+b release then d
 * Finish this markdown and make it look good
 
 
+train on topics with over a threshold of counts
 
 Thursday Presentations 4 minutes
 Monday dress rehersal

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Trending News Article Topics</title>
+    <!-- You can download css and js from https://github.com/mistic100/jQCloud/tree/master/dist -->
+    <link rel="stylesheet" href="/static/css/jqcloud.min.css">
+
+    <!-- You need to include jquery before the jqcloud.js, you can get it from -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/js/jqcloud.min.js"></script>
+    <script type="text/javascript" src="/static/js/word_cloud.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/static/css/main.css" />
+  </head>
+  <body class="subpage">
+    <!-- Header -->
+    <header id="header">
+      <div class="inner">
+        <a href="/" class="logo">App Name</a>
+        <nav id="nav">
+          <a href="/">Home</a>
+        </nav>
+        <a href="#navPanel" class="navPanelToggle"><span class="fa fa-bars"></span></a>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <section id="main" class="wrapper">
+      <div class="inner">
+        <div class="row 200%">
+          <div class="6u 12u$(medium)">
+            <h3> View trends of topic </h3>
+            <form action="/topic_counts/">
+              <div class="row uniform">
+                <div class="6u 12u$(xsmall)">
+                  <div class="select-wrapper">
+                    <select name="topic_select">
+                    	{% for topic in total_topics %}
+                    		{% if topic == total_topics[current_topic+1] %}
+                    			<option selected value="{{ topic }}">{{ topic }}</option>
+                    		{% else %}
+                    			<option value="{{ topic }}">{{ topic }}</option>
+                    		{% endif %}
+                    	{% endfor %}
+                    </select>
+                  </div>
+                </div>
+                <div class="6u$ 12u$(xsmall)">
+                  <button type="submit">View Topic</button>
+                </div>
+              </div>
+            </form>
+            {% if current_topic >= 0 %}
+              <form action="/topic_articles/">
+                <button type="submit" name="topic_select" value="{{ total_topics[current_topic+1] }}"> View Articles in Topic </button>
+              </form>
+            {% endif %}
+          </div>
+          {% if current_topic == -1 %}
+            <div class="6u$ 12u$(medium)">
+              <h3> Select Topic for More Info </h3>
+            </div>
+          {% else %}
+            <div class="6u$ 12u$(medium)">
+              <h3> Words in Selected Topic </h3>
+              <div id="word_cloud">
+              </div>
+            </div>
+          {% endif %}
+        </div>
+        <div class="count_plot">
+          <h3> {{ plot_title }} </h3>
+          <img src="/word_plot.png" alt="Count Plot">
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer">
+      <div class="copyright">
+        <h3> Website by Peter Russo </h3>
+        <ul class="icons">
+          <li><a href="https://github.com/s0eger/working_title" class="icon fa-github"><span class="label">Github</span></a></li>
+          <li><a href="http://linkedin.com/in/peter-russo-4b0b5839" class="icon fa-linkedin"><span class="label">Github</span></a></li>
+        </ul>
+        <p> CSS Template provided by <a href="https://templated.co"><strong>TEMPLATED</strong></a></p>
+        <p> Word Cloud produced by <a href="http://mistic100.github.io/jQCloud/index.html"><strong>jQCloud</strong></a></p>
+      </div>
+    </footer>
+
+    <!-- Scripts -->
+    <!-- <script src="/static/js/jquery.min.js"></script> -->
+    <script src="/static/js/skel.min.js"></script>
+    <script src="/static/js/util.js"></script>
+    <script src="/static/js/main.js"></script>
+
+  </body>
+</html>

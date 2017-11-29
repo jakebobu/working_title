@@ -1,7 +1,10 @@
+from words_to_vals import NMF_Time, _tokenize
 from work_with_counts import Count_Worker
 import pickle
 from scipy.optimize import minimize, differential_evolution
 import numpy as np
+import pandas as pd
+import datetime as dt
 
 def minimize_error(weights):
     periods_ahead = 6
@@ -35,11 +38,27 @@ def minimize_error(weights):
         error += np.sum(Y[:,j+m-1]-(s[:,j]+m*b[:,j]+c[:,(j+m)%L]))**2
     return error
 
-if __name__ == '__main__':
+def minimize_start():
     with open('app_model/output_data.pkl','rb') as f:
         cw = pickle.load(f)
     w0 = np.array([0.2,0.2,0.2])
     Y = cw.smooth_data
     r = (0.001,0.999)
-    # response = minimize(minimize_error, w0, bounds=[(0.0,1.0),(0.0,1.0),(0.0,1.0)])
-    # response = differential_evolution(minimize_error,bounds=[r,r,r])
+    # return minimize(minimize_error, w0, bounds=[(0.0,1.0),(0.0,1.0),(0.0,1.0)])
+    # return differential_evolution(minimize_error,bounds=[r,r,r])
+
+def generate_model(data_location, save_model=True):
+    nmf_model = NMF_Time(top_n_words=25, verbose=True)
+    df = pd.read_csv(data_location, index_col=0)
+    df = df[df['news_source'] == 'NYT'] # Currently due to not enough from other sources
+    nmf_model.generate_topics(df['content'].values, tok=_tokenize, min_df = 0.01, max_features = 10000, n_components=500)
+    nmf_model.perform_time_counting_self(df, delta=dt.timedelta(hours=4), threshold=0.05)
+    if save_model:
+        nmf_model.save_model()
+    return nmf_model
+
+def load_prior_model():
+    return NMF_Time(load_model=True)
+
+if __name__ == '__main__':
+    generate_model('../temp_data1.csv')

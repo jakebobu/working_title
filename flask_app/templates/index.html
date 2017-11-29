@@ -1,60 +1,147 @@
-<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/html">
-  <head>
-    <meta charset="UTF-8">
-    <title>Trending News Article Topics</title>
-    <h1> News Article Topics </h1>
-    <!-- You can download css and js from https://github.com/mistic100/jQCloud/tree/master/dist -->
-    <link rel="stylesheet" href="../static/css/jqcloud.min.css">
+<!DOCTYPE HTML>
+<!--
+	Projection by TEMPLATED
+	templated.co @templatedco
+	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+	<head>
+		<title>Trending News Article Topics</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="/static/css/main.css" />
+	</head>
+	<body>
 
-    <!-- You need to include jquery before the jqcloud.js, you can get it from -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script type="text/javascript" src="../static/js/jqcloud.min.js"></script>
+	<!-- Header -->
+		<header id="header">
+			<div class="inner">
+				<a href="/" class="logo">App Name</a>
+				<nav id="nav">
+					<a href="/">Home</a>
+					<!-- <a href="generic.html">Generic</a>
+					<a href="elements.html">Elements</a> -->
+				</nav>
+				<a href="#navPanel" class="navPanelToggle"><span class="fa fa-bars"></span></a>
+			</div>
+		</header>
 
-    <!-- here we included our script.js -->
-    <script type="text/javascript" src="../static/js/word_cloud.js"></script>
-  </head>
-  <body>
-    <div id="input_area">
-      <h4> View topics from word </h4>
-      <form action="/topics/">
-        See Topics from Word: <input type="text" name="c_token" value=token>
-        <input type="submit" value ="View Token"><br>
-      </form>
-      <br>
-      <h4> View trends of topic <h4>
-      <form action="/">
-        <select name="topic_select">
-        	{% for topic in total_topics %}
-        		{% if topic == total_topics[current_topic+1] %}
-        			<option selected value="{{ topic }}">{{ topic }}</option>
-        		{% else %}
-        			<option value="{{ topic }}">{{ topic }}</option>
-        		{% endif %}
-        	{% endfor %}
-        </select>
-        <input type="submit" value="View Topic">
-      </form>
-      <br>
-    </div>
-    {% if current_topic == -1 %}
-    <h3> Select Topic for More Info </h3>
-    {% else %}
-    <form action="/topic_articles/">
-      <button type="submit" name="topic_index" value={{ current_topic }}> View Articles </button>
-    </form>
-    <h2> Words in Selected Topic </h2>
-    <div id="word_cloud">
-    </div>
-    {% endif %}
-    <div class="count_plot">
-      <h2> {{ plot_title }} </h2>
-      <img src="/word_plot.png" alt="Count Plot">
-    </div>
-  </body>
-  <footer>
-    <h3> Website by Peter Russo </h3>
-    <h4> Word Cloud produced by <a href="http://mistic100.github.io/jQCloud/index.html">jQCloud</a></h4>
-    <a href="https://github.com/s0eger/working_title"> github repo </a>
-  </footer>
+		<!-- Banner -->
+			<section id="banner">
+				<div class="inner">
+					<header>
+						<h1>Explore News Article Topics by Trend and Content</h1>
+					</header>
+
+					<div class="flex ">
+
+						<div>
+							<span class="icon fa-car"></span>
+							<h3>Topics by Token</h3>
+							<p>View all topics related to a<br /> word of your choice</p>
+						</div>
+
+						<div>
+							<span class="icon fa-camera"></span>
+							<h3>Topic Trending</h3>
+							<p>View the words that make up<br /> a topic and its recent trends</p>
+						</div>
+
+						<div>
+							<span class="icon fa-bug"></span>
+							<h3>Topic Articles</h3>
+							<p>View all the articles that <br />constitute a topic</p>
+						</div>
+
+					</div>
+
+					<footer>
+						<a href="#three" class="button">Get Started</a>
+					</footer>
+				</div>
+			</section>
+
+
+		<!-- Three -->
+			<section id="three" class="wrapper align-center">
+				<div class="inner">
+					<div class="flex flex-3">
+						<article>
+							<div class="image round">
+								<img src="static/images/pic01.jpg" alt="Pic 01" />
+							</div>
+							<header>
+								<h3>Enter a Token (Word)</h3>
+							</header>
+              <p>Accepts a one word token</p>
+              <form action="/token_topics/">
+                <div class="6u 12u$(xsmall)">
+                  <input type="text" name="c_token" value=token><br>
+                </div>
+                <input type="submit" class="button" value="View Token">
+              </form>
+						</article>
+						<article>
+							<div class="image round">
+								<img src="static/images/pic02.jpg" alt="Pic 02" />
+							</div>
+							<header>
+								<h3>Select Topic for Trending</h3>
+							</header>
+							<p>Topics are presented in order of growing trend</p>
+              <form action="/topic_counts/">
+                <div class="select-wrapper" style="width:70%;">
+                  <select name="topic_select">
+                  	{% for topic in total_topics %}
+                  		<option value="{{ topic }}">{{ topic }}</option>
+                  	{% endfor %}
+                  </select>
+                </div>
+                <br>
+                <input type="submit" class="button" value="View Topic">
+              </form>
+						</article>
+            <article>
+							<div class="image round">
+								<img src="static/images/pic02.jpg" alt="Pic 03" />
+							</div>
+							<header>
+								<h3>Select Topic for Articles</h3>
+							</header>
+              <p>Topics are presented in order of growing trend</p>
+              <form action="/topic_articles/">
+                <div class="select-wrapper" style="width:70%;">
+                  <select name="topic_select">
+                    {% for topic in tot_topics %}
+                      <option value="{{ topic }}">{{ topic }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <br>
+                <input type="submit" class="button" value="View Articles">
+              </form>
+						</article>
+					</div>
+				</div>
+			</section>
+
+		<!-- Footer -->
+			<footer id="footer">
+	      <div class="copyright">
+	        <h3> Website by Peter Russo </h3>
+	        <ul class="icons">
+	          <li><a href="https://github.com/s0eger/working_title" class="icon fa-github"><span class="label">Github</span></a></li>
+						<li><a href="http://linkedin.com/in/peter-russo-4b0b5839" class="icon fa-linkedin"><span class="label">Github</span></a></li>
+	        </ul>
+	        <p> CSS Template provided by <a href="https://templated.co"><strong>TEMPLATED</strong></a></p>
+	      </div>
+	    </footer>
+
+		<!-- Scripts -->
+		<script src="/static/js/jquery.min.js"></script>
+		<script src="/static/js/skel.min.js"></script>
+		<script src="/static/js/util.js"></script>
+		<script src="/static/js/main.js"></script>
+
+	</body>
 </html>
