@@ -94,18 +94,6 @@ def word_plot():
     else:
         print(type(cw.web_index))
         print(cw.web_index)
-        # fig, ax = plt.figure(figsize=(12,5))
-        # for i in range(len(TOPIC_LIST)):
-        #     ax.plot(cw.times, cw.smooth_data[i], label=TOPIC_LIST[i])
-        # handles, labels = ax.get_legend_handles_labels()
-        # interactive_legend = plugins.InteractiveLegendPlugin(zip(handles,
-        #                                                  ax.collections),
-        #                                              labels,
-        #                                              alpha_unsel=0.5,
-        #                                              alpha_over=1.5,
-        #                                              start_visible=True)
-        # plugins.connect(fig, interactive_legend)
-        # return mpld3.fig_to_html(fig)
         return ''' '''
 
     return ''' '''
