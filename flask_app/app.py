@@ -53,7 +53,7 @@ def word_cloud_words():
     if cw.web_index >= 0:
         #TODO: looking at better scaling the weights so that they look better
         #TODO: way to define the url to this web app through flask attribute
-        word_list = [{ 'text': k, 'weight': 5*(1 - np.exp(-v)), 'link' : 'http://0.0.0.0:8080/token_topics/?c_token={}'.format(k) } for k, v in cw.dc[cw.web_index].items()]
+        word_list = [{ 'text': k, 'weight': 100*(v**0.1), 'link' : 'http://0.0.0.0:8080/token_topics/?c_token={}'.format(k) } for k, v in cw.dc[cw.web_index].items()]
     print(len(word_list))
     return json.dumps(word_list)
 

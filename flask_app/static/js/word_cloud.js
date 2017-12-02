@@ -6,6 +6,7 @@ $(document).ready(function () {
        // we will build a word cloud into our div with id=word_cloud
        // we have to specify width and height of the word_cloud chart
        $('#word_cloud').jQCloud(words_data, {
+           autoResize: True,
            width: 800,
            height: 300
        });

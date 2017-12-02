@@ -147,7 +147,7 @@ class NMF_Time():
         self.topics = np.array(top_words)
         self.topic_dc = np.array(temp_dict)
 
-    def perform_time_counting_self (self, df, delta=dt.timedelta(days=1), threshold=0.1):
+    def perform_time_counting_self (self, df, delta=dt.timedelta(days=1), threshold=0.1, start_time=None):
         """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
         This assumes that df content is that the model was fitted on
 
@@ -165,7 +165,8 @@ class NMF_Time():
         """
 
         df['pub_date'] = pd.to_datetime(df['pub_date'])
-        start_time = df['pub_date'].min()
+        if start_time == None:
+            start_time = df['pub_date'].min()
         end_time = start_time + delta
         ending_point = df['pub_date'].max()
         topic_counts = []
@@ -231,7 +232,7 @@ class NMF_Time():
         plt.ylabel('% of Topics with Articles')
         plt.show()
 
-    def perform_time_counting_new (self, df, delta=dt.timedelta(days=1), threshold=0.1):
+    def perform_time_counting_new (self, df, delta=dt.timedelta(days=1), threshold=0.1, prior_times=False):
         """ Takes in a dataframe of data, and returns across time the percentage of total articles that are part of topics
 
         Parameters
@@ -256,7 +257,11 @@ class NMF_Time():
             generate_topics(content)
         t_mat = self.t_vect.transform(df['content'].values)
         self.W = self.nmf.transform(t_mat)
-        self.perform_time_counting_self(df, delta, threshold)
+        start_time = None
+        if prior_times:
+            delta = self.times[1] - self.times[0]
+            start_time = self.times[-1]
+        self.perform_time_counting_self(df, delta, threshold, start_time)
         # df['pub_date'] = pd.to_datetime(df['pub_date'])
         # start_time = df['pub_date'].min()
         # end_time = start_time + delta

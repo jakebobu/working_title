@@ -86,7 +86,7 @@ def generate_model(data_location, save_model=True):
     df = pd.read_csv(data_location, index_col=0)
     df = df[df['news_source'] == 'NYT'] # Currently due to not enough from other sources
     nmf_model.generate_topics(df['content'].values, tok=_tokenize, min_df = 0.01, max_features = 10000, n_components=500)
-    nmf_model.perform_time_counting_self(df, delta=dt.timedelta(hours=4), threshold=0.05)
+    nmf_model.perform_time_counting_cw(df, delta=dt.timedelta(hours=4), threshold=0.05)
     if save_model:
         nmf_model.save_model()
     return nmf_model
@@ -95,5 +95,26 @@ def load_prior_model():
     ''' Loads and returns the currently saved pickled model found under '/app_model' '''
     return NMF_Time(load_model=True)
 
+def valid_error(new_df):
+    model = NMF_Time(load_model=True)
+    new_df['pub_date'] = pd.to_datetime(new_df['pub_date'])
+    new_df = new_df[new_df['pub_date'] > model.times[-1]]
+    model.perform_time_counting_new(new_df,threshold=0.05, prior_times=True)
+    cw = Count_Worker(model)
+    with open('app_model/output_data.pkl','rb') as f:
+        pcw = pickle.load(f)
+    mask = np.sum(pcw.all_counts,axis=1) >= 3
+    cw.topic_counts = cw.all_counts[mask,:]
+    cw.W_a = cw.W[:,mask]
+    # cw.topics = cw.all_topics[mask,:]
+    # cw.topics = {i : cw.topics[i,:] for i in range(pcw.topics.shape[0])}
+    cw.dc = cw.all_dc[mask]
+    cw.data_smoothing()
+    pcw.predict_all(periods_ahead=cw.times.shape[0])
+    error = (np.sum((cw.topic_counts - pcw.predicted_values[:,1:])**2,axis=0)/cw.topic_counts.shape[0])**0.5
+    return error, pcw.predicted_times[1:]
+
 if __name__ == '__main__':
-    obj = generate_model('../temp_data1.csv',save_model=False)
+    # obj = generate_model('../temp_data1.csv',save_model=False)
+    df = pd.read_csv('../temp_data2.csv',index_col=0)
+    err, times = valid_error(df)

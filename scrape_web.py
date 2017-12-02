@@ -150,7 +150,7 @@ def big_batch_nyt(month, year):
     link = link + str(year) + '/' + str(month) + '.json'
     payload = {'api-key': nyt_key }
     content = single_query(link, payload)
-    df_tot = pd.read_csv('temp_data1.csv',index_col=0)
+    df_tot = pd.read_csv('temp_data2.csv',index_col=0)
     temp_cols = ['_id', 'content', 'headline', 'news_source', 'pub_date', 'section_name', 'web_url', 'word_count']
     df_tot = df_tot[temp_cols]
     save_rate = 25
@@ -186,7 +186,7 @@ def nyt_batch_save (jsony, df_tot):
     df['content'] = content_list
     df_tot = df_tot.append(df[temp_cols])
     print('saving')
-    df_tot.to_csv('temp_data1.csv')
+    df_tot.to_csv('temp_data2.csv')
     return df_tot
 
 def news_thingy_scrape_meta(source, sortBy):
