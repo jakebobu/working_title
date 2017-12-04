@@ -5,8 +5,9 @@ from scipy.optimize import minimize, differential_evolution
 import numpy as np
 import pandas as pd
 import datetime as dt
+import matplotlib.pyplot as plt
 
-def minimize_error(weights):
+def minimize_error(weights, *args):
     """ Minimization function, the y values are stored in the main block
 
     Parameters
@@ -17,7 +18,7 @@ def minimize_error(weights):
     -------
     error: Sum of squared errors value looking to be minimized
     """
-
+    Y = args[0]
     periods_ahead = 6
     m = 7
     alpha = weights[0]
@@ -64,10 +65,12 @@ def minimize_start():
     with open('app_model/output_data.pkl','rb') as f:
         cw = pickle.load(f)
     w0 = np.array([0.2,0.2,0.2])
-    Y = cw.smooth_data
-    r = (0.001,0.999)
-    # return minimize(minimize_error, w0, bounds=[(0.0,1.0),(0.0,1.0),(0.0,1.0)])
-    # return differential_evolution(minimize_error,bounds=[r,r,r])
+    tsum = np.sum(cw.topic_counts, axis=1)
+    sum_sort = np.argsort(tsum)
+    Y = cw.smooth_data[sum_sort[:50],:]
+    r = (0.0,1.0)
+    # return minimize(minimize_error, w0, args = (Y), bounds=[r,r,r])
+    return differential_evolution(minimize_error, args = (Y,), bounds=[r,r,r])
 
 def generate_model(data_location, save_model=True):
     """ Generates a model for the flask app to utilize as data source
@@ -85,8 +88,8 @@ def generate_model(data_location, save_model=True):
     nmf_model = NMF_Time(top_n_words=25, verbose=True)
     df = pd.read_csv(data_location, index_col=0)
     df = df[df['news_source'] == 'NYT'] # Currently due to not enough from other sources
-    nmf_model.generate_topics(df['content'].values, tok=_tokenize, min_df = 0.01, max_features = 10000, n_components=500)
-    nmf_model.perform_time_counting_cw(df, delta=dt.timedelta(hours=4), threshold=0.05)
+    nmf_model.generate_topics(df['content'].values, tok=_tokenize, min_df = 0.005, max_features = 10000, n_components=500)
+    nmf_model.perform_time_counting_self(df, delta=dt.timedelta(hours=4), threshold=0.05)
     if save_model:
         nmf_model.save_model()
     return nmf_model
@@ -114,7 +117,33 @@ def valid_error(new_df):
     error = (np.sum((cw.topic_counts - pcw.predicted_values[:,1:])**2,axis=0)/cw.topic_counts.shape[0])**0.5
     return error, pcw.predicted_times[1:]
 
+
+
+def show_example_trend(topic_index = 5):
+    with open('app_model/output_data.pkl','rb') as f:
+        cw = pickle.load(f)
+    p_vals = np.zeros(cw.times.shape[0])
+    test_vals = cw.smooth_data[topic_index,:]
+    L = 6
+    # starting points are i*6
+    # for i in range (1, p_vals.shape[0]):
+    #     p_vals[i] = cw.triple_exp_predict(topic_index,periods_ahead= 1 + ((i-1) % L), at_time=6*((i-1) // L))[0]
+    for i in range (1, p_vals.shape[0]):
+        p_vals[i] = cw.triple_exp_predict(topic_index,periods_ahead = 1, at_time= i - 1)[0]
+    p_vals = np.clip(p_vals,a_min=0,a_max=None)
+    plt.plot(cw.times,test_vals,'b',linewidth=5,alpha=0.4, label='Actual')
+    plt.plot(cw.times, p_vals,c='g',ls='--',label='Predicted')
+    # plt.ylabel('Article Counts', fontsize=18)
+    plt.xlabel('Date (Year-Month)',fontsize=18)
+    plt.xticks(fontsize=14, rotation=20)
+    plt.yticks(fontsize=14)
+    plt.legend()
+    plt.show()
+
+
 if __name__ == '__main__':
-    # obj = generate_model('../temp_data1.csv',save_model=False)
-    df = pd.read_csv('../temp_data2.csv',index_col=0)
-    err, times = valid_error(df)
+    # obj = generate_model('../article_data.csv',save_model=True)
+    # result = minimize_start()
+    # df = pd.read_csv('../article_data.csv',index_col=0)
+    # err, times = valid_error(df)
+    show_example_trend()

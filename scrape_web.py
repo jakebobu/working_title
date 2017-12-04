@@ -150,7 +150,7 @@ def big_batch_nyt(month, year):
     link = link + str(year) + '/' + str(month) + '.json'
     payload = {'api-key': nyt_key }
     content = single_query(link, payload)
-    df_tot = pd.read_csv('temp_data2.csv',index_col=0)
+    df_tot = pd.read_csv('article_data.csv',index_col=0)
     temp_cols = ['_id', 'content', 'headline', 'news_source', 'pub_date', 'section_name', 'web_url', 'word_count']
     df_tot = df_tot[temp_cols]
     save_rate = 25
@@ -173,8 +173,13 @@ def nyt_batch_save (jsony, df_tot):
 
     temp_cols = ['_id', 'content', 'headline', 'news_source', 'pub_date', 'section_name', 'web_url', 'word_count']
     ''' Looks to remove duplicate articles based on '_id' '''
-    jsony = [d for d in jsony if d['_id'] not in df_tot['_id']]
+    jsony = [d for d in jsony if d['_id'] not in df_tot['_id'].values]
+    if len(jsony)==0:
+        return df_tot
     df = pd.DataFrame(jsony)
+    for t in temp_cols:
+        if t not in df.columns:
+            df[t] = None
     df['news_source'] = 'NYT'
     content_list = []
     for d in jsony:
@@ -186,7 +191,7 @@ def nyt_batch_save (jsony, df_tot):
     df['content'] = content_list
     df_tot = df_tot.append(df[temp_cols])
     print('saving')
-    df_tot.to_csv('temp_data2.csv')
+    df_tot.to_csv('article_data.csv')
     return df_tot
 
 def news_thingy_scrape_meta(source, sortBy):
@@ -417,7 +422,7 @@ def fox_news_web_scrape(start_date = dt.date(2017,8,1),end_date = dt.date.today(
 def fox_news_to_table(links,titles,sections):
     """ Given work done by fox_news_web_scrape, grabs the article content for those articles and adds that information to the current storage location
 
-    Parameters
+    Parametersthree
     ----------
     links: website urls for articles
     titles: the headlines of those articles
@@ -457,49 +462,11 @@ def clean_up_df(df):
 
 if __name__ == '__main__':
     sources = ['the-washington-post','bbc-news','cnn','breitbart-news']
-    big_batch_nyt(11, 2017)
-    # The three general things you can run (Pick 1)
+    # The various general things you can run (Pick 1)
+    big_batch_nyt(12, 2017)
     # nyt_scrape_meta_continuous(days=16, end_date=dt.datetime(2017, 7, 25))    r = requests.get(link)
     # html = r.content
     # soup = bs4.BeautifulSoup(html, 'html.parser')
     # soup.a.decompose()
     # tot_newsy(sources)
     # nyt_scrape_meta() # Good for getting today's nyt news
-
-
-
-
-            #
-            #
-            # ''' Given a web source, will pull from a BeautifulSoup object the article content '''
-            # if source == 'the-washington-post':
-            #     tempy = [t.text for t in soup.findAll('p') if '<p ' not in t]
-            #     while len(tempy) > 0 and 'email address' not in tempy[0]:
-            #         tempy = tempy[1:]
-            #     tempy=tempy[1:]
-            #     content_list.append(' '.join(tempy))
-            #     topic = link[link.find('.com/')+5:]
-            #     topic_list.append(topic[:topic.find('/')])
-            # elif source == 'bbc-news':
-            #     tempy = [t.text for t in soup.findAll('p') if '<p ' not in t]
-            #     while len(tempy) > 0 and 'external links' not in tempy[0]:
-            #         tempy = tempy[1:]
-            #     tempy=tempy[1:]
-            #     if len(tempy) > 0 and 'newsletter' in tempy[-1]:
-            #         tempy = tempy[:-1]
-            #     content_list.append(' '.join(tempy))
-            #     topic = link[link.find('.co.uk/')+7:]
-            #     topic_list.append(topic[:topic.find('/')])
-            # elif source == 'cnn':
-            #     tempy = [t.text for t in soup.findAll("div", {"class" : ["zn-body__paragraph speakable", "zn-body__paragraph"]})]
-            #     content_list.append(' '.join(tempy))
-            #     topic = link[link.find('.com/')+16:]
-            #     topic_list.append(topic[:topic.find('/')])
-            # elif source == 'breitbart-news':
-            #     tempy = [t.text for t in soup.select('p')]
-            #     tempy = tempy[1:-5]
-            #     content_list.append(' '.join(tempy))
-            #     topic = link[link.find('.com/')+5:]
-            #     topic_list.append(topic[:topic.find('/')])
-            # else:
-            #     print('Could not handle source')

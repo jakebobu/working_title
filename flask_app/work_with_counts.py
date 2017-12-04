@@ -40,7 +40,7 @@ class Count_Worker(object):
         self.topics = {i : self.topics[i,:] for i in range(self.topics.shape[0])}
         self.dc = self.all_dc[tsum >= useful_count]
 
-    def create_article_topic_relation(self):
+    def create_article_topic_relation(self, useful_count = 3):
         """ Creates a dictionary where the keys are each topic and the values is a list of articles by their indece that relate to that topic
 
         Parameters
@@ -54,8 +54,10 @@ class Count_Worker(object):
         """
 
         article_relates = dict()
-        for i in range(self.W_a.shape[1]):
-            article_relates[i] = np.argwhere(self.W_a[:,i] >= self.topic_threshold)[:,0]
+        mask = np.sum(self.all_counts,axis=1)>=useful_count
+        for i in range(self.W.shape[1]):
+            if mask[i]:
+                article_relates[i] = np.argwhere(self.W[:,i] >= self.topic_threshold)[:,0]
         self.article_relates = article_relates
 
     def calc_accel(self):
@@ -459,7 +461,8 @@ class Count_Worker(object):
         plt.show()
 
     def predict_all(self, periods_ahead=6):
-        self.triple_exp_smoothing(alpha=0.5, beta=0.5, gamma=1.0)
+        params = np.array([0.79134282,  0.80664629,  0.94580101])
+        self.triple_exp_smoothing(alpha=params[0], beta=params[1], gamma=params[2])
         predicted_values = np.zeros((self.smooth_data.shape[0],periods_ahead+1))
         predicted_values[:,0]= self.smooth_data[:,-1]
         for i in range(predicted_values.shape[0]):
