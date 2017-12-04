@@ -53,7 +53,7 @@ def word_cloud_words():
     if cw.web_index >= 0:
         #TODO: looking at better scaling the weights so that they look better
         #TODO: way to define the url to this web app through flask attribute
-        word_list = [{ 'text': k, 'weight': 100*(v**0.1), 'link' : 'http://0.0.0.0:8080/token_topics/?c_token={}'.format(k) } for k, v in cw.dc[cw.web_index].items()]
+        word_list = [{ 'text': k, 'weight': (v**0.1), 'link' : 'http://0.0.0.0:8080/token_topics/?c_token={}'.format(k) } for k, v in cw.dc[cw.web_index].items()]
     print(len(word_list))
     return json.dumps(word_list)
 
@@ -92,9 +92,22 @@ def word_plot():
         plt.savefig(image)
         return image.getvalue(), 200, {'Content-Type': 'image/png'}
     else:
-        print(type(cw.web_index))
-        print(cw.web_index)
-        return ''' '''
+        plt.figure(figsize=(12,5))
+        for i in range(10):
+            counts_back = cw.smooth_data[cw.web_index]
+            counts_back = counts_back[-pb:]
+            back_times = cw.times[-pb:]
+            counts_fwd = cw.predicted_values[cw.web_index]
+            plt.plot(back_times, counts_back, label='Current')
+            plt.plot(cw.predicted_times, counts_fwd,'--',label='Predicted')
+        plt.legend()
+        plt.xlabel('Date')
+        plt.ylabel('Topic Article Counts')
+        plt.grid(True, alpha=0.6)
+        image = BytesIO()
+        plt.savefig(image)
+
+        return image.getvalue(), 200, {'Content-Type': 'image/png'}
 
     return ''' '''
 
@@ -116,7 +129,8 @@ def topic_articles():
         Given a provided topic, shows a list of the articles that make up that topic
     '''
     c_topic = request.args.get('topic_select')
-    topic_index = TOPIC_ARTICLE.index(c_topic)
+    topic_index = cw.trending_order[TOPIC_ARTICLE.index(c_topic)]
+    topic_index = np.where(cw.all_dc==cw.dc[topic_index])[0][0]
     columns = ['web_url','headline','pub_date']
     if topic_index >= 0:
         df_topic = df.iloc[cw.article_relates[topic_index],:]

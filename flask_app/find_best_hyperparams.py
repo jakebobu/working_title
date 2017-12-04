@@ -113,13 +113,22 @@ def valid_error(new_df):
     # cw.topics = {i : cw.topics[i,:] for i in range(pcw.topics.shape[0])}
     cw.dc = cw.all_dc[mask]
     cw.data_smoothing()
+    top_topics = pcw.trending_order[:25]
+    # top_topics = np.argsort(np.sum(pcw.topic_counts,axis=1))[:-26:-1]
+    test_counts = cw.topic_counts[top_topics,:]
     pcw.predict_all(periods_ahead=cw.times.shape[0])
-    error = (np.sum((cw.topic_counts - pcw.predicted_values[:,1:])**2,axis=0)/cw.topic_counts.shape[0])**0.5
-    return error, pcw.predicted_times[1:]
+    test_predicted = pcw.predicted_values[top_topics,:]
+    error = (np.sum((test_counts - test_predicted[:,1:])**2,axis=0)/cw.topic_counts.shape[0])**0.5
+    base_counts = np.zeros_like(cw.topic_counts)
+    for i in range(base_counts.shape[1]):
+        base_counts[:,i]= pcw.topic_counts[:,-1]
+    base_counts = base_counts[top_topics,:]
+    base_error = (np.sum((test_counts - base_counts)**2,axis=0)/cw.topic_counts.shape[0])**0.5
+    return error, base_error, pcw.predicted_times[1:]
 
 
 
-def show_example_trend(topic_index = 5):
+def show_example_trend(topic_index = 1):
     with open('app_model/output_data.pkl','rb') as f:
         cw = pickle.load(f)
     p_vals = np.zeros(cw.times.shape[0])
@@ -131,19 +140,19 @@ def show_example_trend(topic_index = 5):
     for i in range (1, p_vals.shape[0]):
         p_vals[i] = cw.triple_exp_predict(topic_index,periods_ahead = 1, at_time= i - 1)[0]
     p_vals = np.clip(p_vals,a_min=0,a_max=None)
-    plt.plot(cw.times,test_vals,'b',linewidth=5,alpha=0.4, label='Actual')
-    plt.plot(cw.times, p_vals,c='g',ls='--',label='Predicted')
+    plt.plot(cw.times,test_vals,'b',linewidth=5,alpha=0.5, label='Actual')
+    plt.plot(cw.times, p_vals,c='k',linewidth=2,ls='--',label='Predicted')
     # plt.ylabel('Article Counts', fontsize=18)
-    plt.xlabel('Date (Year-Month)',fontsize=18)
-    plt.xticks(fontsize=14, rotation=20)
+    # plt.xlabel('Date (Year-Month)',fontsize=18)
+    plt.xticks(fontsize=14)
     plt.yticks(fontsize=14)
     plt.legend()
     plt.show()
-
+    print(cw.all_dc[topic_index])
 
 if __name__ == '__main__':
     # obj = generate_model('../article_data.csv',save_model=True)
     # result = minimize_start()
-    # df = pd.read_csv('../article_data.csv',index_col=0)
-    # err, times = valid_error(df)
-    show_example_trend()
+    df = pd.read_csv('../temp_data2.csv',index_col=0)
+    err, b_err, times = valid_error(df)
+    # show_example_trend()
