@@ -27,6 +27,7 @@ The purpose of this project is to generate a model with the predictive capabilit
 ## Process
 
 ### Workflow Visualization
+<br>
 
   ![Flow Chart of Process](readme_images/workflow.png "Flow Chart of the workflow")
 
@@ -84,7 +85,7 @@ Sum of Squared Errors across a subset of the article corpus to show ranges of er
 
 ## Web Application
 Ran from AWS utilizing flask through python. See flask_app/app.py for its code.
-Visit Website Here:
+Visit Website [Here](http://ec2-54-234-245-42.compute-1.amazonaws.com:5000/).
 (If down, contact me for assistance)
 <!-- ![Flask App Index Page](readme_images/index_page.png "Landing Page of Flask Web Application") -->
 
